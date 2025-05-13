@@ -6,6 +6,9 @@ fmt:
 vet:
 	go vet ./...
 
+lint:
+	golint -set_exit_status ./...
+
 test:
 	go test -v ./...
 
@@ -19,4 +22,4 @@ install: build
 clean:
 	rm -f terraform-provider-devin
 
-.PHONY: fmt vet test build install clean
+.PHONY: fmt vet lint test build install clean
