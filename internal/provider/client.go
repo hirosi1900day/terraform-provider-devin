@@ -153,6 +153,8 @@ func (c *DevinClient) ListKnowledge() (*ListKnowledgeResponse, error) {
 }
 
 // GetKnowledge は特定のIDのナレッジを取得する
+// 注意: Devin API には現在、個別のナレッジを取得する専用のエンドポイントが
+// 明示的に公開されていないため、List API を使用して特定のIDのナレッジを抽出しています
 func (c *DevinClient) GetKnowledge(id string) (*Knowledge, error) {
 	// デモ向けにモックデータを返す（開発・テスト用）
 	if IsMockClient(c.APIKey) {
@@ -160,18 +162,28 @@ func (c *DevinClient) GetKnowledge(id string) (*Knowledge, error) {
 	}
 
 	// 通常の処理
-	path := fmt.Sprintf("/knowledge/%s", id)
-	respBody, err := c.sendRequest("GET", path, nil)
+	// リスト取得 API を使用して全てのナレッジを取得
+	response, err := c.ListKnowledge()
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("ナレッジリストの取得中にエラーが発生しました: %w", err)
 	}
 
-	var knowledge Knowledge
-	if err := json.Unmarshal(respBody, &knowledge); err != nil {
-		return nil, fmt.Errorf("レスポンスのJSONデコードに失敗しました: %w", err)
+	// 指定された ID に一致するナレッジを検索
+	for _, item := range response.Knowledge {
+		if item.ID == id {
+			// 見つかったナレッジを返す
+			return &Knowledge{
+				ID:                 item.ID,
+				Name:               item.Name,
+				Body:               item.Body,
+				TriggerDescription: item.TriggerDescription,
+				ParentFolderID:     item.ParentFolderID,
+				CreatedAt:          item.CreatedAt,
+			}, nil
+		}
 	}
 
-	return &knowledge, nil
+	return nil, fmt.Errorf("指定されたID '%s' のナレッジが見つかりませんでした", id)
 }
 
 // CreateKnowledge は新しいナレッジを作成する
