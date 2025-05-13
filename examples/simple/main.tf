@@ -14,8 +14,10 @@ provider "devin" {
 
 # ナレッジリソースを作成
 resource "devin_knowledge" "example" {
-  name        = "更新されたナレッジ"
-  description = "これはTerraformで更新されたサンプルナレッジです"
+  name                = "サンプルナレッジ"
+  body                = "これはTerraformで作成されたサンプルナレッジの内容です"
+  trigger_description = "このナレッジは特定の条件でトリガーされます"
+  # parent_folder_id    = "optional-folder-id" # 任意項目
 }
 
 # 作成したナレッジのIDを出力
@@ -28,9 +30,14 @@ output "knowledge_name" {
   value = devin_knowledge.example.name
 }
 
-# 作成したナレッジの説明を出力
-output "knowledge_description" {
-  value = devin_knowledge.example.description
+# 作成したナレッジの内容を出力
+output "knowledge_body" {
+  value = devin_knowledge.example.body
+}
+
+# 作成したナレッジのトリガー説明を出力
+output "knowledge_trigger_description" {
+  value = devin_knowledge.example.trigger_description
 }
 
 # 作成したナレッジの作成日時を出力

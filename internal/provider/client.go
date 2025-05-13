@@ -24,9 +24,9 @@ type DevinClient struct {
 type Knowledge struct {
 	ID                 string    `json:"id"`
 	Name               string    `json:"name"`
-	Body               string    `json:"body,omitempty"`
-	TriggerDescription string    `json:"trigger_description,omitempty"`
-	ParentFolderID     string    `json:"parent_folder_id,omitempty"`
+	Body               string    `json:"body"`                       // 必須
+	TriggerDescription string    `json:"trigger_description"`        // 必須
+	ParentFolderID     string    `json:"parent_folder_id,omitempty"` // 任意
 	CreatedAt          time.Time `json:"created_at"`
 }
 
@@ -40,9 +40,9 @@ type ListKnowledgeResponse struct {
 type KnowledgeItem struct {
 	ID                 string    `json:"id"`
 	Name               string    `json:"name"`
-	Body               string    `json:"body,omitempty"`
-	TriggerDescription string    `json:"trigger_description,omitempty"`
-	ParentFolderID     string    `json:"parent_folder_id,omitempty"`
+	Body               string    `json:"body"`                       // 必須
+	TriggerDescription string    `json:"trigger_description"`        // 必須
+	ParentFolderID     string    `json:"parent_folder_id,omitempty"` // 任意
 	CreatedAt          time.Time `json:"created_at"`
 }
 
@@ -56,18 +56,18 @@ type FolderItem struct {
 
 // CreateKnowledgeRequest はナレッジ作成APIのリクエスト
 type CreateKnowledgeRequest struct {
-	Name               string `json:"name"`
-	Body               string `json:"body,omitempty"`
-	ParentFolderID     string `json:"parent_folder_id,omitempty"`
-	TriggerDescription string `json:"trigger_description,omitempty"`
+	Name               string `json:"name"`                       // 必須
+	Body               string `json:"body"`                       // 必須
+	ParentFolderID     string `json:"parent_folder_id,omitempty"` // 任意
+	TriggerDescription string `json:"trigger_description"`        // 必須
 }
 
 // UpdateKnowledgeRequest はナレッジ更新APIのリクエスト
 type UpdateKnowledgeRequest struct {
-	Name               string `json:"name"`
-	Body               string `json:"body,omitempty"`
-	ParentFolderID     string `json:"parent_folder_id,omitempty"`
-	TriggerDescription string `json:"trigger_description,omitempty"`
+	Name               string `json:"name"`                       // 必須
+	Body               string `json:"body"`                       // 必須
+	ParentFolderID     string `json:"parent_folder_id,omitempty"` // 任意
+	TriggerDescription string `json:"trigger_description"`        // 必須
 }
 
 // ErrorResponse はAPIエラー時のレスポンスを表します

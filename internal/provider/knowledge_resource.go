@@ -57,11 +57,11 @@ func (r *KnowledgeResource) Schema(_ context.Context, _ resource.SchemaRequest, 
 			},
 			"body": schema.StringAttribute{
 				Description: "ナレッジの内容",
-				Optional:    true,
+				Required:    true,
 			},
 			"trigger_description": schema.StringAttribute{
 				Description: "ナレッジのトリガー説明",
-				Optional:    true,
+				Required:    true,
 			},
 			"parent_folder_id": schema.StringAttribute{
 				Description: "親フォルダのID",
