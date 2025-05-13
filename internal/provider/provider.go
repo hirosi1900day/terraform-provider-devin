@@ -13,18 +13,18 @@ import (
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 )
 
-// Devinプロバイダーの型を定義
+// DevinProvider はTerraformのDevinプロバイダーを表します
 type DevinProvider struct {
 	// プロバイダーのバージョン
 	version string
 }
 
-// プロバイダーの設定構造体
+// DevinProviderModel はプロバイダーの設定構造体を表します
 type DevinProviderModel struct {
-	ApiKey types.String `tfsdk:"api_key"`
+	APIKey types.String `tfsdk:"api_key"`
 }
 
-// New関数は新しいDevinプロバイダーインスタンスを返します
+// New は新しいDevinプロバイダーインスタンスを返します
 func New(version string) func() provider.Provider {
 	return func() provider.Provider {
 		return &DevinProvider{
@@ -33,13 +33,13 @@ func New(version string) func() provider.Provider {
 	}
 }
 
-// Metadata関数はプロバイダーのメタデータを返します
+// Metadata はプロバイダーのメタデータを返します
 func (p *DevinProvider) Metadata(_ context.Context, _ provider.MetadataRequest, resp *provider.MetadataResponse) {
 	resp.TypeName = "devin"
 	resp.Version = p.version
 }
 
-// Schema関数はプロバイダーのスキーマを定義します
+// Schema はプロバイダーのスキーマを定義します
 func (p *DevinProvider) Schema(_ context.Context, _ provider.SchemaRequest, resp *provider.SchemaResponse) {
 	resp.Schema = schema.Schema{
 		Attributes: map[string]schema.Attribute{
@@ -52,7 +52,7 @@ func (p *DevinProvider) Schema(_ context.Context, _ provider.SchemaRequest, resp
 	}
 }
 
-// Configure関数はプロバイダーの設定を行います
+// Configure はプロバイダーの設定を行います
 func (p *DevinProvider) Configure(ctx context.Context, req provider.ConfigureRequest, resp *provider.ConfigureResponse) {
 	tflog.Info(ctx, "Devinプロバイダーの設定を開始します")
 
@@ -65,8 +65,8 @@ func (p *DevinProvider) Configure(ctx context.Context, req provider.ConfigureReq
 
 	// API Keyの設定
 	apiKey := os.Getenv("DEVIN_API_KEY")
-	if !config.ApiKey.IsNull() {
-		apiKey = config.ApiKey.ValueString()
+	if !config.APIKey.IsNull() {
+		apiKey = config.APIKey.ValueString()
 	}
 
 	if apiKey == "" {
@@ -87,14 +87,14 @@ func (p *DevinProvider) Configure(ctx context.Context, req provider.ConfigureReq
 	tflog.Info(ctx, "Devinプロバイダーの設定が完了しました")
 }
 
-// Resources関数はプロバイダーが提供するリソースを定義します
+// Resources はプロバイダーが提供するリソースを定義します
 func (p *DevinProvider) Resources(_ context.Context) []func() resource.Resource {
 	return []func() resource.Resource{
 		NewKnowledgeResource,
 	}
 }
 
-// DataSources関数はプロバイダーが提供するデータソースを定義します
+// DataSources はプロバイダーが提供するデータソースを定義します
 func (p *DevinProvider) DataSources(_ context.Context) []func() datasource.DataSource {
 	return []func() datasource.DataSource{
 		NewKnowledgeDataSource,

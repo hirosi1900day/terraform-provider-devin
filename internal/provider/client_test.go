@@ -9,11 +9,11 @@ func TestNewClient(t *testing.T) {
 	if client == nil {
 		t.Fatalf("NewClient() returned nil")
 	}
-	if client.ApiKey != "test-api-key" {
-		t.Errorf("NewClient() API key = %s, want %s", client.ApiKey, "test-api-key")
+	if client.APIKey != "test-api-key" {
+		t.Errorf("NewClient() API key = %s, want %s", client.APIKey, "test-api-key")
 	}
-	if client.HttpClient == nil {
-		t.Errorf("NewClient() HttpClient is nil")
+	if client.HTTPClient == nil {
+		t.Errorf("NewClient() HTTPClient is nil")
 	}
 }
 

@@ -10,7 +10,7 @@ func TestClientError(t *testing.T) {
 
 	// In the current implementation, we need to skip this test when using mock data
 	// because errors are only triggered with actual API requests
-	if client.ApiKey == "test_api_key" {
+	if client.APIKey == "test_api_key" {
 		t.Skip("This test requires connection to the actual API")
 	}
 }

@@ -35,17 +35,17 @@ func TestProviderConfigure(t *testing.T) {
 
 func TestProviderAPI(t *testing.T) {
 	// Test behavior when API_KEY is set in environment variables
-	oldApiKey := os.Getenv("DEVIN_API_KEY")
+	oldAPIKey := os.Getenv("DEVIN_API_KEY")
 	os.Setenv("DEVIN_API_KEY", "test_api_key")
-	defer os.Setenv("DEVIN_API_KEY", oldApiKey) // Restore original value after test
+	defer os.Setenv("DEVIN_API_KEY", oldAPIKey) // Restore original value after test
 
 	// Verify that the client is created correctly
 	client := NewClient("test_api_key")
 	if client == nil {
 		t.Fatalf("NewClient() returned nil")
 	}
-	if client.ApiKey != "test_api_key" {
-		t.Errorf("NewClient() API key = %s, want %s", client.ApiKey, "test_api_key")
+	if client.APIKey != "test_api_key" {
+		t.Errorf("NewClient() API key = %s, want %s", client.APIKey, "test_api_key")
 	}
 }
 

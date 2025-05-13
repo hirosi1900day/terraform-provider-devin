@@ -16,8 +16,8 @@ const (
 
 // DevinClient は Devin API とのやり取りを行うクライアント
 type DevinClient struct {
-	ApiKey     string
-	HttpClient *http.Client
+	APIKey     string
+	HTTPClient *http.Client
 }
 
 // Knowledge はDevinのナレッジリソースを表す構造体
@@ -46,7 +46,7 @@ type UpdateKnowledgeRequest struct {
 	Description string `json:"description,omitempty"`
 }
 
-// APIエラー時のレスポンス
+// ErrorResponse はAPIエラー時のレスポンスを表します
 type ErrorResponse struct {
 	Error struct {
 		Message string `json:"message"`
@@ -57,8 +57,8 @@ type ErrorResponse struct {
 // NewClient は新しいDevinClientを作成する
 func NewClient(apiKey string) *DevinClient {
 	return &DevinClient{
-		ApiKey: apiKey,
-		HttpClient: &http.Client{
+		APIKey: apiKey,
+		HTTPClient: &http.Client{
 			Timeout: 30 * time.Second,
 		},
 	}
@@ -82,10 +82,10 @@ func (c *DevinClient) sendRequest(method, path string, body interface{}) ([]byte
 		return nil, fmt.Errorf("HTTPリクエストの作成に失敗しました: %w", err)
 	}
 
-	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", c.ApiKey))
+	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", c.APIKey))
 	req.Header.Set("Content-Type", "application/json")
 
-	resp, err := c.HttpClient.Do(req)
+	resp, err := c.HTTPClient.Do(req)
 	if err != nil {
 		return nil, fmt.Errorf("HTTPリクエストの実行に失敗しました: %w", err)
 	}
@@ -110,7 +110,7 @@ func (c *DevinClient) sendRequest(method, path string, body interface{}) ([]byte
 // ListKnowledge はナレッジの一覧を取得する
 func (c *DevinClient) ListKnowledge() ([]Knowledge, error) {
 	// デモ向けにモックデータを返す（開発・テスト用）
-	if c.ApiKey == "test_api_key" {
+	if c.APIKey == "test_api_key" {
 		return []Knowledge{
 			{
 				ID:          "mock-knowledge-1",
@@ -146,7 +146,7 @@ func (c *DevinClient) ListKnowledge() ([]Knowledge, error) {
 // GetKnowledge は特定のIDのナレッジを取得する
 func (c *DevinClient) GetKnowledge(id string) (*Knowledge, error) {
 	// デモ向けにモックデータを返す（開発・テスト用）
-	if c.ApiKey == "test_api_key" {
+	if c.APIKey == "test_api_key" {
 		if id == "mock-knowledge-1" {
 			return &Knowledge{
 				ID:          "mock-knowledge-1",
@@ -202,7 +202,7 @@ func (c *DevinClient) GetKnowledge(id string) (*Knowledge, error) {
 // CreateKnowledge は新しいナレッジを作成する
 func (c *DevinClient) CreateKnowledge(name, description string) (*Knowledge, error) {
 	// デモ向けにモックデータを返す（開発・テスト用）
-	if c.ApiKey == "test_api_key" {
+	if c.APIKey == "test_api_key" {
 		return &Knowledge{
 			ID:          "new-mock-knowledge",
 			Name:        name,
@@ -234,7 +234,7 @@ func (c *DevinClient) CreateKnowledge(name, description string) (*Knowledge, err
 // UpdateKnowledge はナレッジを更新する
 func (c *DevinClient) UpdateKnowledge(id, name, description string) (*Knowledge, error) {
 	// デモ向けにモックデータを返す（開発・テスト用）
-	if c.ApiKey == "test_api_key" {
+	if c.APIKey == "test_api_key" {
 		return &Knowledge{
 			ID:          id,
 			Name:        name,
@@ -267,7 +267,7 @@ func (c *DevinClient) UpdateKnowledge(id, name, description string) (*Knowledge,
 // DeleteKnowledge はナレッジを削除する
 func (c *DevinClient) DeleteKnowledge(id string) error {
 	// デモ向けにモックデータを返す（開発・テスト用）
-	if c.ApiKey == "test_api_key" {
+	if c.APIKey == "test_api_key" {
 		return nil
 	}
 
