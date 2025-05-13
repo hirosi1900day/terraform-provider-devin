@@ -1,0 +1,50 @@
+name: バグ報告
+description: バグを報告するためのテンプレート
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        バグ報告をありがとうございます。このテンプレートに沿って必要な情報を提供してください。
+  - type: textarea
+    id: description
+    attributes:
+      label: バグの説明
+      description: バグがどのようなものか簡潔に説明してください。
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: 再現手順
+      description: バグを再現するための手順を詳細に記述してください。
+      placeholder: |
+        1. この設定で...
+        2. このコマンドを実行...
+        3. エラーが発生...
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: 期待する動作
+      description: 期待する正しい動作について説明してください。
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: ログとエラーメッセージ
+      description: 関連するログやエラーメッセージをコピーして貼り付けてください。
+      render: shell
+  - type: textarea
+    id: environment
+    attributes:
+      label: 環境
+      description: 使用している環境情報を提供してください。
+      placeholder: |
+        - OS: [例: Ubuntu 20.04]
+        - Terraform バージョン: [例: v1.0.0]
+        - Go バージョン: [例: 1.21.0]
+    validations:
+      required: true

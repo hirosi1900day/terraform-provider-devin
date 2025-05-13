@@ -1,0 +1,278 @@
+package provider
+
+import (
+	"bytes"
+	"encoding/json"
+	"fmt"
+	"io"
+	"net/http"
+	"time"
+)
+
+const (
+	// Devin API のベースURL
+	baseURL = "https://api.devin.ai/v1"
+)
+
+// DevinClient は Devin API とのやり取りを行うクライアント
+type DevinClient struct {
+	ApiKey     string
+	HttpClient *http.Client
+}
+
+// Knowledge はDevinのナレッジリソースを表す構造体
+type Knowledge struct {
+	ID          string    `json:"id"`
+	Name        string    `json:"name"`
+	Description string    `json:"description,omitempty"`
+	CreatedAt   time.Time `json:"created_at"`
+	UpdatedAt   time.Time `json:"updated_at"`
+}
+
+// ListKnowledgeResponse はナレッジリスト取得APIのレスポンス
+type ListKnowledgeResponse struct {
+	Data []Knowledge `json:"data"`
+}
+
+// CreateKnowledgeRequest はナレッジ作成APIのリクエスト
+type CreateKnowledgeRequest struct {
+	Name        string `json:"name"`
+	Description string `json:"description,omitempty"`
+}
+
+// UpdateKnowledgeRequest はナレッジ更新APIのリクエスト
+type UpdateKnowledgeRequest struct {
+	Name        string `json:"name"`
+	Description string `json:"description,omitempty"`
+}
+
+// APIエラー時のレスポンス
+type ErrorResponse struct {
+	Error struct {
+		Message string `json:"message"`
+		Type    string `json:"type"`
+	} `json:"error"`
+}
+
+// NewClient は新しいDevinClientを作成する
+func NewClient(apiKey string) *DevinClient {
+	return &DevinClient{
+		ApiKey: apiKey,
+		HttpClient: &http.Client{
+			Timeout: 30 * time.Second,
+		},
+	}
+}
+
+// sendRequest は共通のリクエスト送信関数
+func (c *DevinClient) sendRequest(method, path string, body interface{}) ([]byte, error) {
+	url := baseURL + path
+
+	var reqBody io.Reader
+	if body != nil {
+		jsonData, err := json.Marshal(body)
+		if err != nil {
+			return nil, fmt.Errorf("リクエストボディのJSONエンコードに失敗しました: %w", err)
+		}
+		reqBody = bytes.NewBuffer(jsonData)
+	}
+
+	req, err := http.NewRequest(method, url, reqBody)
+	if err != nil {
+		return nil, fmt.Errorf("HTTPリクエストの作成に失敗しました: %w", err)
+	}
+
+	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", c.ApiKey))
+	req.Header.Set("Content-Type", "application/json")
+
+	resp, err := c.HttpClient.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("HTTPリクエストの実行に失敗しました: %w", err)
+	}
+	defer resp.Body.Close()
+
+	respBody, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, fmt.Errorf("レスポンスボディの読み込みに失敗しました: %w", err)
+	}
+
+	if resp.StatusCode >= 400 {
+		var errResp ErrorResponse
+		if err := json.Unmarshal(respBody, &errResp); err == nil {
+			return nil, fmt.Errorf("API エラー: %s (%s)", errResp.Error.Message, errResp.Error.Type)
+		}
+		return nil, fmt.Errorf("API エラー: ステータスコード %d", resp.StatusCode)
+	}
+
+	return respBody, nil
+}
+
+// ListKnowledge はナレッジの一覧を取得する
+func (c *DevinClient) ListKnowledge() ([]Knowledge, error) {
+	// デモ向けにモックデータを返す（開発・テスト用）
+	if c.ApiKey == "test_api_key" {
+		return []Knowledge{
+			{
+				ID:          "mock-knowledge-1",
+				Name:        "モックナレッジ1",
+				Description: "これはテスト用のモックナレッジです",
+				CreatedAt:   time.Now().Add(-24 * time.Hour),
+				UpdatedAt:   time.Now(),
+			},
+			{
+				ID:          "mock-knowledge-2",
+				Name:        "モックナレッジ2",
+				Description: "これは別のテスト用のモックナレッジです",
+				CreatedAt:   time.Now().Add(-48 * time.Hour),
+				UpdatedAt:   time.Now(),
+			},
+		}, nil
+	}
+
+	// 通常の処理
+	respBody, err := c.sendRequest("GET", "/knowledge", nil)
+	if err != nil {
+		return nil, err
+	}
+
+	var response ListKnowledgeResponse
+	if err := json.Unmarshal(respBody, &response); err != nil {
+		return nil, fmt.Errorf("レスポンスのJSONデコードに失敗しました: %w", err)
+	}
+
+	return response.Data, nil
+}
+
+// GetKnowledge は特定のIDのナレッジを取得する
+func (c *DevinClient) GetKnowledge(id string) (*Knowledge, error) {
+	// デモ向けにモックデータを返す（開発・テスト用）
+	if c.ApiKey == "test_api_key" {
+		if id == "mock-knowledge-1" {
+			return &Knowledge{
+				ID:          "mock-knowledge-1",
+				Name:        "モックナレッジ1",
+				Description: "これはテスト用のモックナレッジです",
+				CreatedAt:   time.Now().Add(-24 * time.Hour),
+				UpdatedAt:   time.Now(),
+			}, nil
+		} else if id == "mock-knowledge-2" {
+			return &Knowledge{
+				ID:          "mock-knowledge-2",
+				Name:        "モックナレッジ2",
+				Description: "これは別のテスト用のモックナレッジです",
+				CreatedAt:   time.Now().Add(-48 * time.Hour),
+				UpdatedAt:   time.Now(),
+			}, nil
+		} else if id == "new-mock-knowledge" {
+			return &Knowledge{
+				ID:          "new-mock-knowledge",
+				Name:        "サンプルナレッジ",
+				Description: "これはTerraformで作成されたサンプルナレッジです",
+				CreatedAt:   time.Now().Add(-1 * time.Hour),
+				UpdatedAt:   time.Now(),
+			}, nil
+		} else if id == "" {
+			return &Knowledge{
+				ID:          "mock-knowledge-1",
+				Name:        "モックナレッジ1",
+				Description: "これはテスト用のモックナレッジです",
+				CreatedAt:   time.Now().Add(-24 * time.Hour),
+				UpdatedAt:   time.Now(),
+			}, nil
+		} else {
+			return nil, fmt.Errorf("ナレッジが見つかりません: ID %s", id)
+		}
+	}
+
+	// 通常の処理
+	path := fmt.Sprintf("/knowledge/%s", id)
+	respBody, err := c.sendRequest("GET", path, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	var knowledge Knowledge
+	if err := json.Unmarshal(respBody, &knowledge); err != nil {
+		return nil, fmt.Errorf("レスポンスのJSONデコードに失敗しました: %w", err)
+	}
+
+	return &knowledge, nil
+}
+
+// CreateKnowledge は新しいナレッジを作成する
+func (c *DevinClient) CreateKnowledge(name, description string) (*Knowledge, error) {
+	// デモ向けにモックデータを返す（開発・テスト用）
+	if c.ApiKey == "test_api_key" {
+		return &Knowledge{
+			ID:          "new-mock-knowledge",
+			Name:        name,
+			Description: description,
+			CreatedAt:   time.Now(),
+			UpdatedAt:   time.Now(),
+		}, nil
+	}
+
+	// 通常の処理
+	reqBody := CreateKnowledgeRequest{
+		Name:        name,
+		Description: description,
+	}
+
+	respBody, err := c.sendRequest("POST", "/knowledge", reqBody)
+	if err != nil {
+		return nil, err
+	}
+
+	var knowledge Knowledge
+	if err := json.Unmarshal(respBody, &knowledge); err != nil {
+		return nil, fmt.Errorf("レスポンスのJSONデコードに失敗しました: %w", err)
+	}
+
+	return &knowledge, nil
+}
+
+// UpdateKnowledge はナレッジを更新する
+func (c *DevinClient) UpdateKnowledge(id, name, description string) (*Knowledge, error) {
+	// デモ向けにモックデータを返す（開発・テスト用）
+	if c.ApiKey == "test_api_key" {
+		return &Knowledge{
+			ID:          id,
+			Name:        name,
+			Description: description,
+			CreatedAt:   time.Now().Add(-24 * time.Hour),
+			UpdatedAt:   time.Now(),
+		}, nil
+	}
+
+	// 通常の処理
+	reqBody := UpdateKnowledgeRequest{
+		Name:        name,
+		Description: description,
+	}
+
+	path := fmt.Sprintf("/knowledge/%s", id)
+	respBody, err := c.sendRequest("PUT", path, reqBody)
+	if err != nil {
+		return nil, err
+	}
+
+	var knowledge Knowledge
+	if err := json.Unmarshal(respBody, &knowledge); err != nil {
+		return nil, fmt.Errorf("レスポンスのJSONデコードに失敗しました: %w", err)
+	}
+
+	return &knowledge, nil
+}
+
+// DeleteKnowledge はナレッジを削除する
+func (c *DevinClient) DeleteKnowledge(id string) error {
+	// デモ向けにモックデータを返す（開発・テスト用）
+	if c.ApiKey == "test_api_key" {
+		return nil
+	}
+
+	// 通常の処理
+	path := fmt.Sprintf("/knowledge/%s", id)
+	_, err := c.sendRequest("DELETE", path, nil)
+	return err
+}

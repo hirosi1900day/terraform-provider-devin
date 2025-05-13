@@ -1,0 +1,37 @@
+name: 機能リクエスト
+description: 新機能のリクエストまたは改善の提案
+labels: [enhancement]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        機能リクエストをありがとうございます。このテンプレートに沿って機能のアイデアを共有してください。
+  - type: textarea
+    id: problem
+    attributes:
+      label: 関連する問題
+      description: この機能リクエストが解決する問題や課題について説明してください。
+      placeholder: 現在、～の作業が困難です。この機能があれば～ができるようになります。
+    validations:
+      required: true
+  - type: textarea
+    id: solution
+    attributes:
+      label: 提案する解決策
+      description: 実装したい機能や改善点について詳しく説明してください。
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: 代替案
+      description: 考慮した代替案や回避策があれば説明してください。
+    validations:
+      required: false
+  - type: textarea
+    id: context
+    attributes:
+      label: 追加コンテキスト
+      description: 機能に関連するその他の情報やスクリーンショットを追加してください。
+    validations:
+      required: false

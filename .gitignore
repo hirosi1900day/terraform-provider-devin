@@ -1,0 +1,46 @@
+# Goのビルドファイル
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+
+# テストバイナリ、ビルドデータカバレッジなど
+*.test
+*.out
+
+# 依存関係ディレクトリ（必要に応じてコメントアウト）
+# vendor/
+
+# GoLandのプロジェクトファイル
+.idea/
+
+# VSCodeの設定
+.vscode/
+
+# バイナリファイル
+terraform-provider-devin
+
+# Terraformの一時ファイル
+**/.terraform/*
+*.tfstate
+*.tfstate.*
+.terraformrc
+*.tfvars
+*.tfvars.json
+*.auto.tfvars
+*.auto.tfvars.json
+terraform.rc
+.terraform.lock.hcl
+
+# ログファイル
+*.log
+
+# macOS関連ファイル
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+
+# キャッシュディレクトリ
+.cache/

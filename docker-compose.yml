@@ -1,0 +1,17 @@
+version: '3'
+
+services:
+  dev:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    volumes:
+      - .:/app
+      - go-cache:/go
+    environment:
+      - DEVIN_API_KEY=test_api_key
+    working_dir: /app
+    command: sh -c "make && make install && tail -f /dev/null"
+
+volumes:
+  go-cache:
