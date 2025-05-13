@@ -21,5 +21,5 @@
 - Terraform Framework APIを使用した実装
 - モックデータ機能による開発・テストサポート
 
-[Unreleased]: https://github.com/hirosi1900day/devin-terraform/compare/v1.0.0...HEAD
-[1.0.0]: https://github.com/hirosi1900day/devin-terraform/releases/tag/v1.0.0
+[Unreleased]: https://github.com/hirosi1900day/terraform-provider-devin-knowledge/compare/v1.0.0...HEAD
+[1.0.0]: https://github.com/hirosi1900day/terraform-provider-devin-knowledge/releases/tag/v1.0.0

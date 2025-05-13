@@ -6,7 +6,7 @@ import (
 	"log"
 
 	"github.com/hashicorp/terraform-plugin-framework/providerserver"
-	"github.com/hirosi1900day/devin-terraform/internal/provider"
+	"github.com/hirosi1900day/terraform-provider-devin-knowledge/internal/provider"
 )
 
 // バージョン情報はビルド時に設定されます

@@ -2,7 +2,7 @@
 
 This repository contains a Terraform Provider for managing [Devin AI](https://devin.ai) knowledge resources.
 
-[![Go Report Card](https://goreportcard.com/badge/github.com/hirosi1900day/devin-terraform)](https://goreportcard.com/report/github.com/hirosi1900day/devin-terraform)
+[![Go Report Card](https://goreportcard.com/badge/github.com/hirosi1900day/terraform-provider-devin-knowledge)](https://goreportcard.com/report/github.com/hirosi1900day/terraform-provider-devin-knowledge)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 ## Overview
@@ -110,8 +110,8 @@ After importing, running `terraform plan` will show the differences between your
 ### Clone the Repository
 
 ```bash
-git clone https://github.com/hirosi1900day/devin-terraform.git
-cd devin-terraform
+git clone https://github.com/hirosi1900day/terraform-provider-devin-knowledge.git
+cd terraform-provider-devin-knowledge
 ```
 
 ### Install Dependencies

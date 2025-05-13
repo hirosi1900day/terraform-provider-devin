@@ -20,7 +20,7 @@ func TestProviderSchema(t *testing.T) {
 		t.Fatalf("Schema had unexpected error: %s", resp.Diagnostics.Errors())
 	}
 
-	// api_key属性が存在するか確認
+	// Check if api_key attribute exists
 	apiKeyAttr := resp.Schema.Attributes["api_key"]
 	if apiKeyAttr == nil {
 		t.Fatal("Schema doesn't have api_key attribute")
@@ -28,18 +28,18 @@ func TestProviderSchema(t *testing.T) {
 }
 
 func TestProviderConfigure(t *testing.T) {
-	// テストではprovider.Configureの実装に依存せず、シンプルにテストします
-	// 実際のプロバイダーの機能は統合テストでカバーすることが望ましい
-	t.Skip("provider.Configureの詳細なテストはスキップします")
+	// In testing, we don't want to depend on the implementation of provider.Configure
+	// Actual provider functionality should be covered in integration tests
+	t.Skip("Skipping detailed test for provider.Configure")
 }
 
 func TestProviderAPI(t *testing.T) {
-	// API_KEYが環境変数で設定されている場合の動作テスト
+	// Test behavior when API_KEY is set in environment variables
 	oldApiKey := os.Getenv("DEVIN_API_KEY")
 	os.Setenv("DEVIN_API_KEY", "test_api_key")
-	defer os.Setenv("DEVIN_API_KEY", oldApiKey) // テスト後に元の値に戻す
+	defer os.Setenv("DEVIN_API_KEY", oldApiKey) // Restore original value after test
 
-	// クライアントが正しく生成されることを確認
+	// Verify that the client is created correctly
 	client := NewClient("test_api_key")
 	if client == nil {
 		t.Fatalf("NewClient() returned nil")
