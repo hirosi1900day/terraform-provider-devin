@@ -17,11 +17,12 @@ type KnowledgeDataSource struct {
 
 // KnowledgeDataSourceModel はTerraformデータソースのスキーマを表す構造体
 type KnowledgeDataSourceModel struct {
-	ID          types.String `tfsdk:"id"`
-	Name        types.String `tfsdk:"name"`
-	Description types.String `tfsdk:"description"`
-	CreatedAt   types.String `tfsdk:"created_at"`
-	UpdatedAt   types.String `tfsdk:"updated_at"`
+	ID                 types.String `tfsdk:"id"`
+	Name               types.String `tfsdk:"name"`
+	Body               types.String `tfsdk:"body"`
+	TriggerDescription types.String `tfsdk:"trigger_description"`
+	ParentFolderID     types.String `tfsdk:"parent_folder_id"`
+	CreatedAt          types.String `tfsdk:"created_at"`
 }
 
 // NewKnowledgeDataSource はナレッジデータソースのインスタンスを作成します
@@ -47,16 +48,20 @@ func (d *KnowledgeDataSource) Schema(_ context.Context, _ datasource.SchemaReque
 				Description: "ナレッジの名前",
 				Computed:    true,
 			},
-			"description": schema.StringAttribute{
-				Description: "ナレッジの説明",
+			"body": schema.StringAttribute{
+				Description: "ナレッジの内容",
+				Computed:    true,
+			},
+			"trigger_description": schema.StringAttribute{
+				Description: "ナレッジのトリガー説明",
+				Computed:    true,
+			},
+			"parent_folder_id": schema.StringAttribute{
+				Description: "親フォルダのID",
 				Computed:    true,
 			},
 			"created_at": schema.StringAttribute{
 				Description: "ナレッジの作成日時",
-				Computed:    true,
-			},
-			"updated_at": schema.StringAttribute{
-				Description: "ナレッジの更新日時",
 				Computed:    true,
 			},
 		},
@@ -107,9 +112,10 @@ func (d *KnowledgeDataSource) Read(ctx context.Context, req datasource.ReadReque
 
 	// データを設定
 	config.Name = types.StringValue(knowledge.Name)
-	config.Description = types.StringValue(knowledge.Description)
+	config.Body = types.StringValue(knowledge.Body)
+	config.TriggerDescription = types.StringValue(knowledge.TriggerDescription)
+	config.ParentFolderID = types.StringValue(knowledge.ParentFolderID)
 	config.CreatedAt = types.StringValue(knowledge.CreatedAt.Format("2006-01-02T15:04:05Z"))
-	config.UpdatedAt = types.StringValue(knowledge.UpdatedAt.Format("2006-01-02T15:04:05Z"))
 
 	diags = resp.State.Set(ctx, config)
 	resp.Diagnostics.Append(diags...)

@@ -22,28 +22,52 @@ type DevinClient struct {
 
 // Knowledge はDevinのナレッジリソースを表す構造体
 type Knowledge struct {
-	ID          string    `json:"id"`
-	Name        string    `json:"name"`
-	Description string    `json:"description,omitempty"`
-	CreatedAt   time.Time `json:"created_at"`
-	UpdatedAt   time.Time `json:"updated_at"`
+	ID                 string    `json:"id"`
+	Name               string    `json:"name"`
+	Body               string    `json:"body,omitempty"`
+	TriggerDescription string    `json:"trigger_description,omitempty"`
+	ParentFolderID     string    `json:"parent_folder_id,omitempty"`
+	CreatedAt          time.Time `json:"created_at"`
 }
 
 // ListKnowledgeResponse はナレッジリスト取得APIのレスポンス
 type ListKnowledgeResponse struct {
-	Data []Knowledge `json:"data"`
+	Knowledge []KnowledgeItem `json:"knowledge"`
+	Folders   []FolderItem    `json:"folders"`
+}
+
+// KnowledgeItem はナレッジ項目を表す構造体
+type KnowledgeItem struct {
+	ID                 string    `json:"id"`
+	Name               string    `json:"name"`
+	Body               string    `json:"body,omitempty"`
+	TriggerDescription string    `json:"trigger_description,omitempty"`
+	ParentFolderID     string    `json:"parent_folder_id,omitempty"`
+	CreatedAt          time.Time `json:"created_at"`
+}
+
+// FolderItem はフォルダ項目を表す構造体
+type FolderItem struct {
+	ID          string    `json:"id"`
+	Name        string    `json:"name"`
+	Description string    `json:"description,omitempty"`
+	CreatedAt   time.Time `json:"created_at"`
 }
 
 // CreateKnowledgeRequest はナレッジ作成APIのリクエスト
 type CreateKnowledgeRequest struct {
-	Name        string `json:"name"`
-	Description string `json:"description,omitempty"`
+	Name               string `json:"name"`
+	Body               string `json:"body,omitempty"`
+	ParentFolderID     string `json:"parent_folder_id,omitempty"`
+	TriggerDescription string `json:"trigger_description,omitempty"`
 }
 
 // UpdateKnowledgeRequest はナレッジ更新APIのリクエスト
 type UpdateKnowledgeRequest struct {
-	Name        string `json:"name"`
-	Description string `json:"description,omitempty"`
+	Name               string `json:"name"`
+	Body               string `json:"body,omitempty"`
+	ParentFolderID     string `json:"parent_folder_id,omitempty"`
+	TriggerDescription string `json:"trigger_description,omitempty"`
 }
 
 // ErrorResponse はAPIエラー時のレスポンスを表します
@@ -108,7 +132,7 @@ func (c *DevinClient) sendRequest(method, path string, body interface{}) ([]byte
 }
 
 // ListKnowledge はナレッジの一覧を取得する
-func (c *DevinClient) ListKnowledge() ([]Knowledge, error) {
+func (c *DevinClient) ListKnowledge() (*ListKnowledgeResponse, error) {
 	// デモ向けにモックデータを返す（開発・テスト用）
 	if IsMockClient(c.APIKey) {
 		return GetMockKnowledgeList(), nil
@@ -125,7 +149,7 @@ func (c *DevinClient) ListKnowledge() ([]Knowledge, error) {
 		return nil, fmt.Errorf("レスポンスのJSONデコードに失敗しました: %w", err)
 	}
 
-	return response.Data, nil
+	return &response, nil
 }
 
 // GetKnowledge は特定のIDのナレッジを取得する
@@ -151,16 +175,18 @@ func (c *DevinClient) GetKnowledge(id string) (*Knowledge, error) {
 }
 
 // CreateKnowledge は新しいナレッジを作成する
-func (c *DevinClient) CreateKnowledge(name, description string) (*Knowledge, error) {
+func (c *DevinClient) CreateKnowledge(name, body string, triggerDescription string, parentFolderID string) (*Knowledge, error) {
 	// デモ向けにモックデータを返す（開発・テスト用）
 	if IsMockClient(c.APIKey) {
-		return CreateMockKnowledge(name, description), nil
+		return CreateMockKnowledge(name, body, triggerDescription, parentFolderID), nil
 	}
 
 	// 通常の処理
 	reqBody := CreateKnowledgeRequest{
-		Name:        name,
-		Description: description,
+		Name:               name,
+		Body:               body,
+		TriggerDescription: triggerDescription,
+		ParentFolderID:     parentFolderID,
 	}
 
 	respBody, err := c.sendRequest("POST", "/knowledge", reqBody)
@@ -177,16 +203,18 @@ func (c *DevinClient) CreateKnowledge(name, description string) (*Knowledge, err
 }
 
 // UpdateKnowledge はナレッジを更新する
-func (c *DevinClient) UpdateKnowledge(id, name, description string) (*Knowledge, error) {
+func (c *DevinClient) UpdateKnowledge(id, name, body string, triggerDescription string, parentFolderID string) (*Knowledge, error) {
 	// デモ向けにモックデータを返す（開発・テスト用）
 	if IsMockClient(c.APIKey) {
-		return UpdateMockKnowledge(id, name, description), nil
+		return UpdateMockKnowledge(id, name, body, triggerDescription, parentFolderID), nil
 	}
 
 	// 通常の処理
 	reqBody := UpdateKnowledgeRequest{
-		Name:        name,
-		Description: description,
+		Name:               name,
+		Body:               body,
+		TriggerDescription: triggerDescription,
+		ParentFolderID:     parentFolderID,
 	}
 
 	path := fmt.Sprintf("/knowledge/%s", id)

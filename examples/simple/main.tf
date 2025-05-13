@@ -28,6 +28,11 @@ output "knowledge_name" {
   value = devin_knowledge.example.name
 }
 
+# 作成したナレッジの説明を出力
+output "knowledge_description" {
+  value = devin_knowledge.example.description
+}
+
 # 作成したナレッジの作成日時を出力
 output "knowledge_created_at" {
   value = devin_knowledge.example.created_at

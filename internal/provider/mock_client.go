@@ -20,35 +20,39 @@ func GetMockKnowledge(id string) (*Knowledge, error) {
 	switch id {
 	case "mock-knowledge-1":
 		return &Knowledge{
-			ID:          "mock-knowledge-1",
-			Name:        "モックナレッジ1",
-			Description: "これはテスト用のモックナレッジです",
-			CreatedAt:   time.Now().Add(-24 * time.Hour),
-			UpdatedAt:   time.Now(),
+			ID:                 "mock-knowledge-1",
+			Name:               "モックナレッジ1",
+			Body:               "これはテスト用のモックナレッジです",
+			TriggerDescription: "テスト用トリガーの説明",
+			ParentFolderID:     "mock-folder-1",
+			CreatedAt:          time.Now().Add(-24 * time.Hour),
 		}, nil
 	case "mock-knowledge-2":
 		return &Knowledge{
-			ID:          "mock-knowledge-2",
-			Name:        "モックナレッジ2",
-			Description: "これは別のテスト用のモックナレッジです",
-			CreatedAt:   time.Now().Add(-48 * time.Hour),
-			UpdatedAt:   time.Now(),
+			ID:                 "mock-knowledge-2",
+			Name:               "モックナレッジ2",
+			Body:               "これは別のテスト用のモックナレッジです",
+			TriggerDescription: "別のテスト用トリガーの説明",
+			ParentFolderID:     "mock-folder-2",
+			CreatedAt:          time.Now().Add(-48 * time.Hour),
 		}, nil
 	case "new-mock-knowledge":
 		return &Knowledge{
-			ID:          "new-mock-knowledge",
-			Name:        "サンプルナレッジ",
-			Description: "これはTerraformで作成されたサンプルナレッジです",
-			CreatedAt:   time.Now().Add(-1 * time.Hour),
-			UpdatedAt:   time.Now(),
+			ID:                 "new-mock-knowledge",
+			Name:               "サンプルナレッジ",
+			Body:               "これはTerraformで作成されたサンプルナレッジです",
+			TriggerDescription: "Terraformサンプルトリガー",
+			ParentFolderID:     "mock-folder-1",
+			CreatedAt:          time.Now().Add(-1 * time.Hour),
 		}, nil
 	case "":
 		return &Knowledge{
-			ID:          "mock-knowledge-1",
-			Name:        "モックナレッジ1",
-			Description: "これはテスト用のモックナレッジです",
-			CreatedAt:   time.Now().Add(-24 * time.Hour),
-			UpdatedAt:   time.Now(),
+			ID:                 "mock-knowledge-1",
+			Name:               "モックナレッジ1",
+			Body:               "これはテスト用のモックナレッジです",
+			TriggerDescription: "テスト用トリガーの説明",
+			ParentFolderID:     "mock-folder-1",
+			CreatedAt:          time.Now().Add(-24 * time.Hour),
 		}, nil
 	default:
 		return nil, fmt.Errorf("ナレッジが見つかりません: ID %s", id)
@@ -56,43 +60,63 @@ func GetMockKnowledge(id string) (*Knowledge, error) {
 }
 
 // GetMockKnowledgeList はモックのナレッジリスト一覧を返します
-func GetMockKnowledgeList() []Knowledge {
-	return []Knowledge{
-		{
-			ID:          "mock-knowledge-1",
-			Name:        "モックナレッジ1",
-			Description: "これはテスト用のモックナレッジです",
-			CreatedAt:   time.Now().Add(-24 * time.Hour),
-			UpdatedAt:   time.Now(),
+func GetMockKnowledgeList() *ListKnowledgeResponse {
+	return &ListKnowledgeResponse{
+		Knowledge: []KnowledgeItem{
+			{
+				ID:                 "mock-knowledge-1",
+				Name:               "モックナレッジ1",
+				Body:               "これはテスト用のモックナレッジの内容です。",
+				TriggerDescription: "テスト用トリガーの説明",
+				ParentFolderID:     "mock-folder-1",
+				CreatedAt:          time.Now().Add(-24 * time.Hour),
+			},
+			{
+				ID:                 "mock-knowledge-2",
+				Name:               "モックナレッジ2",
+				Body:               "これは別のテスト用のモックナレッジの内容です。",
+				TriggerDescription: "別のテスト用トリガーの説明",
+				ParentFolderID:     "mock-folder-2",
+				CreatedAt:          time.Now().Add(-48 * time.Hour),
+			},
 		},
-		{
-			ID:          "mock-knowledge-2",
-			Name:        "モックナレッジ2",
-			Description: "これは別のテスト用のモックナレッジです",
-			CreatedAt:   time.Now().Add(-48 * time.Hour),
-			UpdatedAt:   time.Now(),
+		Folders: []FolderItem{
+			{
+				ID:          "mock-folder-1",
+				Name:        "モックフォルダ1",
+				Description: "これはテスト用のモックフォルダです",
+				CreatedAt:   time.Now().Add(-72 * time.Hour),
+			},
+			{
+				ID:          "mock-folder-2",
+				Name:        "モックフォルダ2",
+				Description: "これは別のテスト用のモックフォルダです",
+				CreatedAt:   time.Now().Add(-96 * time.Hour),
+			},
 		},
 	}
 }
 
 // CreateMockKnowledge は新しいモックナレッジを作成します
-func CreateMockKnowledge(name, description string) *Knowledge {
+func CreateMockKnowledge(name, body string, triggerDescription, parentFolderID string) *Knowledge {
 	return &Knowledge{
-		ID:          "new-mock-knowledge",
-		Name:        name,
-		Description: description,
-		CreatedAt:   time.Now(),
-		UpdatedAt:   time.Now(),
+		ID:                 "new-mock-knowledge",
+		Name:               name,
+		Body:               body,
+		TriggerDescription: triggerDescription,
+		ParentFolderID:     parentFolderID,
+		CreatedAt:          time.Now(),
 	}
 }
 
 // UpdateMockKnowledge はモックナレッジを更新します
-func UpdateMockKnowledge(id, name, description string) *Knowledge {
+func UpdateMockKnowledge(id, name, body string, triggerDescription, parentFolderID string) *Knowledge {
 	return &Knowledge{
-		ID:          id,
-		Name:        name,
-		Description: description,
-		CreatedAt:   time.Now().Add(-24 * time.Hour),
-		UpdatedAt:   time.Now(),
+		ID:                 id,
+		Name:               name,
+		Body:               body,
+		TriggerDescription: triggerDescription,
+		ParentFolderID:     parentFolderID,
+		CreatedAt:          time.Now().Add(-24 * time.Hour),
 	}
 }

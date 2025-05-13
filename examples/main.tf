@@ -36,6 +36,10 @@ output "knowledge_name" {
   value = data.devin_knowledge.example.name
 }
 
+output "knowledge_description" {
+  value = data.devin_knowledge.example.description
+}
+
 output "knowledge_created_at" {
   value = devin_knowledge.example.created_at
 }

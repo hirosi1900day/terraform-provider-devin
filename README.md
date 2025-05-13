@@ -63,6 +63,10 @@ resource "devin_knowledge" "example" {
 }
 ```
 
+> **Note**: The `description` field is internally mapped to the `body` field in the Devin API.
+> Future versions of this provider will expose additional API fields such as `trigger_description` 
+> and `parent_folder_id`.
+
 ### Using a Knowledge Data Source
 
 ```hcl
@@ -72,6 +76,10 @@ data "devin_knowledge" "example" {
 
 output "knowledge_name" {
   value = data.devin_knowledge.example.name
+}
+
+output "knowledge_description" {
+  value = data.devin_knowledge.example.description
 }
 ```
 
@@ -177,6 +185,22 @@ git push origin v1.0.0
 3. Commit your changes (`git commit -m 'Add some amazing feature'`)
 4. Push to the branch (`git push origin feature/amazing-feature`)
 5. Open a Pull Request
+
+## API Compatibility
+
+This provider has been updated to work with the latest Devin API specification. There are some important notes about field mappings:
+
+1. **Field Mapping**:
+   - The Terraform provider's `description` attribute is mapped to the API's `body` field.
+   - The API fields `trigger_description` and `parent_folder_id` are handled internally but not yet exposed as Terraform attributes.
+
+2. **API Structure**:
+   - The provider supports the `/knowledge` endpoint for listing all knowledge resources.
+   - The response includes both knowledge items and folders as described in the [Devin API documentation](https://docs.devin.ai/api-reference/knowledge/list-knowledge).
+
+3. **Future Enhancements**:
+   - Future versions of this provider will expose all API fields directly, using field names that match the API specification.
+   - A migration path will be provided for users moving from the current field naming to the updated field naming.
 
 ## License
 

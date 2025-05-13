@@ -21,11 +21,12 @@ type KnowledgeResource struct {
 
 // KnowledgeResourceModel はTerraformリソースのスキーマを表す構造体
 type KnowledgeResourceModel struct {
-	ID          types.String `tfsdk:"id"`
-	Name        types.String `tfsdk:"name"`
-	Description types.String `tfsdk:"description"`
-	CreatedAt   types.String `tfsdk:"created_at"`
-	UpdatedAt   types.String `tfsdk:"updated_at"`
+	ID                 types.String `tfsdk:"id"`
+	Name               types.String `tfsdk:"name"`
+	Body               types.String `tfsdk:"body"`
+	TriggerDescription types.String `tfsdk:"trigger_description"`
+	ParentFolderID     types.String `tfsdk:"parent_folder_id"`
+	CreatedAt          types.String `tfsdk:"created_at"`
 }
 
 // NewKnowledgeResource はナレッジリソースのインスタンスを作成します
@@ -54,16 +55,20 @@ func (r *KnowledgeResource) Schema(_ context.Context, _ resource.SchemaRequest, 
 				Description: "ナレッジの名前",
 				Required:    true,
 			},
-			"description": schema.StringAttribute{
-				Description: "ナレッジの説明",
+			"body": schema.StringAttribute{
+				Description: "ナレッジの内容",
+				Optional:    true,
+			},
+			"trigger_description": schema.StringAttribute{
+				Description: "ナレッジのトリガー説明",
+				Optional:    true,
+			},
+			"parent_folder_id": schema.StringAttribute{
+				Description: "親フォルダのID",
 				Optional:    true,
 			},
 			"created_at": schema.StringAttribute{
 				Description: "ナレッジの作成日時",
-				Computed:    true,
-			},
-			"updated_at": schema.StringAttribute{
-				Description: "ナレッジの更新日時",
 				Computed:    true,
 			},
 		},
@@ -102,7 +107,9 @@ func (r *KnowledgeResource) Create(ctx context.Context, req resource.CreateReque
 	// ナレッジの作成
 	knowledge, err := r.client.CreateKnowledge(
 		plan.Name.ValueString(),
-		plan.Description.ValueString(),
+		plan.Body.ValueString(),
+		plan.TriggerDescription.ValueString(),
+		plan.ParentFolderID.ValueString(),
 	)
 	if err != nil {
 		resp.Diagnostics.AddError(
@@ -115,7 +122,6 @@ func (r *KnowledgeResource) Create(ctx context.Context, req resource.CreateReque
 	// モデルを更新
 	plan.ID = types.StringValue(knowledge.ID)
 	plan.CreatedAt = types.StringValue(knowledge.CreatedAt.Format(time.RFC3339))
-	plan.UpdatedAt = types.StringValue(knowledge.UpdatedAt.Format(time.RFC3339))
 
 	// 状態を保存
 	diags = resp.State.Set(ctx, plan)
@@ -154,9 +160,10 @@ func (r *KnowledgeResource) Read(ctx context.Context, req resource.ReadRequest, 
 
 	// モデルを更新
 	state.Name = types.StringValue(knowledge.Name)
-	state.Description = types.StringValue(knowledge.Description)
+	state.Body = types.StringValue(knowledge.Body)
+	state.TriggerDescription = types.StringValue(knowledge.TriggerDescription)
+	state.ParentFolderID = types.StringValue(knowledge.ParentFolderID)
 	state.CreatedAt = types.StringValue(knowledge.CreatedAt.Format(time.RFC3339))
-	state.UpdatedAt = types.StringValue(knowledge.UpdatedAt.Format(time.RFC3339))
 
 	// 状態を保存
 	diags = resp.State.Set(ctx, state)
@@ -192,7 +199,9 @@ func (r *KnowledgeResource) Update(ctx context.Context, req resource.UpdateReque
 	knowledge, err := r.client.UpdateKnowledge(
 		state.ID.ValueString(),
 		plan.Name.ValueString(),
-		plan.Description.ValueString(),
+		plan.Body.ValueString(),
+		plan.TriggerDescription.ValueString(),
+		plan.ParentFolderID.ValueString(),
 	)
 	if err != nil {
 		resp.Diagnostics.AddError(
@@ -205,7 +214,6 @@ func (r *KnowledgeResource) Update(ctx context.Context, req resource.UpdateReque
 	// モデルを更新
 	plan.ID = types.StringValue(knowledge.ID)
 	plan.CreatedAt = types.StringValue(knowledge.CreatedAt.Format(time.RFC3339))
-	plan.UpdatedAt = types.StringValue(knowledge.UpdatedAt.Format(time.RFC3339))
 
 	// 状態を保存
 	diags = resp.State.Set(ctx, plan)
