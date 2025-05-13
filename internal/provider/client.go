@@ -110,23 +110,8 @@ func (c *DevinClient) sendRequest(method, path string, body interface{}) ([]byte
 // ListKnowledge はナレッジの一覧を取得する
 func (c *DevinClient) ListKnowledge() ([]Knowledge, error) {
 	// デモ向けにモックデータを返す（開発・テスト用）
-	if c.APIKey == "test_api_key" {
-		return []Knowledge{
-			{
-				ID:          "mock-knowledge-1",
-				Name:        "モックナレッジ1",
-				Description: "これはテスト用のモックナレッジです",
-				CreatedAt:   time.Now().Add(-24 * time.Hour),
-				UpdatedAt:   time.Now(),
-			},
-			{
-				ID:          "mock-knowledge-2",
-				Name:        "モックナレッジ2",
-				Description: "これは別のテスト用のモックナレッジです",
-				CreatedAt:   time.Now().Add(-48 * time.Hour),
-				UpdatedAt:   time.Now(),
-			},
-		}, nil
+	if IsMockClient(c.APIKey) {
+		return GetMockKnowledgeList(), nil
 	}
 
 	// 通常の処理
@@ -146,42 +131,8 @@ func (c *DevinClient) ListKnowledge() ([]Knowledge, error) {
 // GetKnowledge は特定のIDのナレッジを取得する
 func (c *DevinClient) GetKnowledge(id string) (*Knowledge, error) {
 	// デモ向けにモックデータを返す（開発・テスト用）
-	if c.APIKey == "test_api_key" {
-		if id == "mock-knowledge-1" {
-			return &Knowledge{
-				ID:          "mock-knowledge-1",
-				Name:        "モックナレッジ1",
-				Description: "これはテスト用のモックナレッジです",
-				CreatedAt:   time.Now().Add(-24 * time.Hour),
-				UpdatedAt:   time.Now(),
-			}, nil
-		} else if id == "mock-knowledge-2" {
-			return &Knowledge{
-				ID:          "mock-knowledge-2",
-				Name:        "モックナレッジ2",
-				Description: "これは別のテスト用のモックナレッジです",
-				CreatedAt:   time.Now().Add(-48 * time.Hour),
-				UpdatedAt:   time.Now(),
-			}, nil
-		} else if id == "new-mock-knowledge" {
-			return &Knowledge{
-				ID:          "new-mock-knowledge",
-				Name:        "サンプルナレッジ",
-				Description: "これはTerraformで作成されたサンプルナレッジです",
-				CreatedAt:   time.Now().Add(-1 * time.Hour),
-				UpdatedAt:   time.Now(),
-			}, nil
-		} else if id == "" {
-			return &Knowledge{
-				ID:          "mock-knowledge-1",
-				Name:        "モックナレッジ1",
-				Description: "これはテスト用のモックナレッジです",
-				CreatedAt:   time.Now().Add(-24 * time.Hour),
-				UpdatedAt:   time.Now(),
-			}, nil
-		} else {
-			return nil, fmt.Errorf("ナレッジが見つかりません: ID %s", id)
-		}
+	if IsMockClient(c.APIKey) {
+		return GetMockKnowledge(id)
 	}
 
 	// 通常の処理
@@ -202,14 +153,8 @@ func (c *DevinClient) GetKnowledge(id string) (*Knowledge, error) {
 // CreateKnowledge は新しいナレッジを作成する
 func (c *DevinClient) CreateKnowledge(name, description string) (*Knowledge, error) {
 	// デモ向けにモックデータを返す（開発・テスト用）
-	if c.APIKey == "test_api_key" {
-		return &Knowledge{
-			ID:          "new-mock-knowledge",
-			Name:        name,
-			Description: description,
-			CreatedAt:   time.Now(),
-			UpdatedAt:   time.Now(),
-		}, nil
+	if IsMockClient(c.APIKey) {
+		return CreateMockKnowledge(name, description), nil
 	}
 
 	// 通常の処理
@@ -234,14 +179,8 @@ func (c *DevinClient) CreateKnowledge(name, description string) (*Knowledge, err
 // UpdateKnowledge はナレッジを更新する
 func (c *DevinClient) UpdateKnowledge(id, name, description string) (*Knowledge, error) {
 	// デモ向けにモックデータを返す（開発・テスト用）
-	if c.APIKey == "test_api_key" {
-		return &Knowledge{
-			ID:          id,
-			Name:        name,
-			Description: description,
-			CreatedAt:   time.Now().Add(-24 * time.Hour),
-			UpdatedAt:   time.Now(),
-		}, nil
+	if IsMockClient(c.APIKey) {
+		return UpdateMockKnowledge(id, name, description), nil
 	}
 
 	// 通常の処理
@@ -267,7 +206,7 @@ func (c *DevinClient) UpdateKnowledge(id, name, description string) (*Knowledge,
 // DeleteKnowledge はナレッジを削除する
 func (c *DevinClient) DeleteKnowledge(id string) error {
 	// デモ向けにモックデータを返す（開発・テスト用）
-	if c.APIKey == "test_api_key" {
+	if IsMockClient(c.APIKey) {
 		return nil
 	}
 
