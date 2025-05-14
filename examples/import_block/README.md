@@ -29,8 +29,9 @@ import {
 }
 
 resource "devin_knowledge" "imported_block" {
-  name        = "モックナレッジ1"
-  description = "これはテスト用のモックナレッジです"
+  name                = "モックナレッジ1"
+  body                = "これはテスト用のモックナレッジです"
+  trigger_description = "テスト用トリガーの説明"
 }
 ```
 

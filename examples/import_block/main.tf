@@ -20,29 +20,17 @@ import {
 
 # インポートされたリソースの定義
 resource "devin_knowledge" "imported_block" {
-  name        = "モックナレッジ1"
-  description = "これはテスト用のモックナレッジです"
+  name                = "モックナレッジ1"
+  body                = "これはテスト用のモックナレッジです"
+  trigger_description = "テスト用トリガーの説明"
 }
 
 # 通常のナレッジリソースの定義
 resource "devin_knowledge" "example" {
-  name        = "サンプルナレッジ"
-  description = "これはTerraformで作成されたサンプルナレッジです"
+  name                = "サンプルナレッジ"
+  body                = "これはTerraformで作成されたサンプルナレッジです"
+  trigger_description = "このナレッジは特定の条件でトリガーされます"
 }
-
-# 複数のリソースをインポートする例（コメントアウト状態）
-# 複数のリソースが必要な場合は、以下のようにimportブロックを追加します
-/*
-import {
-  to = devin_knowledge.another_imported
-  id = "mock-knowledge-2"
-}
-
-resource "devin_knowledge" "another_imported" {
-  name        = "モックナレッジ2"
-  description = "これは別のテスト用のモックナレッジです"
-}
-*/
 
 # インポートしたリソースのIDを出力
 output "imported_id" {

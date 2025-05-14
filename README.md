@@ -58,14 +58,15 @@ provider "devin" {
 
 ```hcl
 resource "devin_knowledge" "example" {
-  name        = "Sample Knowledge"
-  description = "This is a knowledge resource created with Terraform"
+  name                = "Sample Knowledge"
+  body                = "This is the content of the knowledge resource"
+  trigger_description = "This knowledge is triggered under specific conditions"
+  # parent_folder_id    = "optional-folder-id" # Optional
 }
 ```
 
-> **Note**: The `description` field is internally mapped to the `body` field in the Devin API.
-> Future versions of this provider will expose additional API fields such as `trigger_description` 
-> and `parent_folder_id`.
+> **Note**: The provider requires both `body` and `trigger_description` fields as they correspond directly 
+> to the Devin API's field structure.
 
 ### Using a Knowledge Data Source
 
@@ -78,8 +79,12 @@ output "knowledge_name" {
   value = data.devin_knowledge.example.name
 }
 
-output "knowledge_description" {
-  value = data.devin_knowledge.example.description
+output "knowledge_body" {
+  value = data.devin_knowledge.example.body
+}
+
+output "knowledge_trigger_description" {
+  value = data.devin_knowledge.example.trigger_description
 }
 ```
 
@@ -188,19 +193,19 @@ git push origin v1.0.0
 
 ## API Compatibility
 
-This provider has been updated to work with the latest Devin API specification. There are some important notes about field mappings:
+This provider works directly with the Devin API specification:
 
-1. **Field Mapping**:
-   - The Terraform provider's `description` attribute is mapped to the API's `body` field.
-   - The API fields `trigger_description` and `parent_folder_id` are handled internally but not yet exposed as Terraform attributes.
+1. **Field Structure**:
+   - The Terraform provider uses the same field names as the API: `body` and `trigger_description` for the content and trigger conditions respectively.
+   - The `parent_folder_id` field is optional and can be used to organize knowledge resources in folders.
 
 2. **API Structure**:
    - The provider supports the `/knowledge` endpoint for listing all knowledge resources.
    - The response includes both knowledge items and folders as described in the [Devin API documentation](https://docs.devin.ai/api-reference/knowledge/list-knowledge).
 
-3. **Future Enhancements**:
-   - Future versions of this provider will expose all API fields directly, using field names that match the API specification.
-   - A migration path will be provided for users moving from the current field naming to the updated field naming.
+3. **Field Requirements**:
+   - Both `body` and `trigger_description` are required fields when creating knowledge resources.
+   - The API requires these fields, and the provider enforces this requirement.
 
 ## License
 
