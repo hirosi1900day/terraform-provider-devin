@@ -5,16 +5,6 @@
 フォーマットは[Keep a Changelog](https://keepachangelog.com/ja/1.0.0/)に基づいており、
 このプロジェクトは[Semantic Versioning](https://semver.org/lang/ja/)に準拠しています。
 
-## [Unreleased]
-
-### 追加
-- 初期バージョンのDevin Terraform Provider
-- ナレッジリソースとデータソースの実装
-- モックデータを使用したテスト環境のサポート
-
-### 変更
-- ナレッジリソースとデータソースから `created_at` 属性を削除（Terraformで管理する必要のない属性）
-
 ## [0.0.1] - 2025-05-14
 
 ### 追加
@@ -24,5 +14,4 @@
 - Terraform Framework APIを使用した実装
 - モックデータ機能による開発・テストサポート
 
-[Unreleased]: https://github.com/hirosi1900day/terraform-provider-devin-knowledge/compare/v0.0.1...HEAD
 [0.0.1]: https://github.com/hirosi1900day/terraform-provider-devin-knowledge/releases/tag/v0.0.1

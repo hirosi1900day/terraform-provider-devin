@@ -20,7 +20,7 @@ The Devin Terraform Provider allows you to manage Devin AI knowledge resources a
 ## Requirements
 
 - [Terraform](https://www.terraform.io/downloads.html) 1.0+
-- [Go](https://golang.org/doc/install) 1.21+ (for development only)
+- [Go](https://golang.org/doc/install) 1.24+ (for development only)
 - Access token for the [Devin API](https://docs.devin.ai/api-reference)
 
 ## Installation
@@ -30,7 +30,7 @@ terraform {
   required_providers {
     devin = {
       source  = "hirosi1900day/devin"
-      version = "~> 0.0.2"
+      version = "~> 0.0.1"
     }
   }
 }
