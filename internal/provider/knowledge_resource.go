@@ -3,7 +3,6 @@ package provider
 import (
 	"context"
 	"fmt"
-	"time"
 
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
@@ -26,7 +25,6 @@ type KnowledgeResourceModel struct {
 	Body               types.String `tfsdk:"body"`
 	TriggerDescription types.String `tfsdk:"trigger_description"`
 	ParentFolderID     types.String `tfsdk:"parent_folder_id"`
-	CreatedAt          types.String `tfsdk:"created_at"`
 }
 
 // NewKnowledgeResource はナレッジリソースのインスタンスを作成します
@@ -66,10 +64,6 @@ func (r *KnowledgeResource) Schema(_ context.Context, _ resource.SchemaRequest, 
 			"parent_folder_id": schema.StringAttribute{
 				Description: "親フォルダのID",
 				Optional:    true,
-			},
-			"created_at": schema.StringAttribute{
-				Description: "ナレッジの作成日時",
-				Computed:    true,
 			},
 		},
 	}
@@ -121,7 +115,6 @@ func (r *KnowledgeResource) Create(ctx context.Context, req resource.CreateReque
 
 	// モデルを更新
 	plan.ID = types.StringValue(knowledge.ID)
-	plan.CreatedAt = types.StringValue(knowledge.CreatedAt.Format(time.RFC3339))
 
 	// 状態を保存
 	diags = resp.State.Set(ctx, plan)
@@ -163,7 +156,6 @@ func (r *KnowledgeResource) Read(ctx context.Context, req resource.ReadRequest, 
 	state.Body = types.StringValue(knowledge.Body)
 	state.TriggerDescription = types.StringValue(knowledge.TriggerDescription)
 	state.ParentFolderID = types.StringValue(knowledge.ParentFolderID)
-	state.CreatedAt = types.StringValue(knowledge.CreatedAt.Format(time.RFC3339))
 
 	// 状態を保存
 	diags = resp.State.Set(ctx, state)
@@ -213,7 +205,6 @@ func (r *KnowledgeResource) Update(ctx context.Context, req resource.UpdateReque
 
 	// モデルを更新
 	plan.ID = types.StringValue(knowledge.ID)
-	plan.CreatedAt = types.StringValue(knowledge.CreatedAt.Format(time.RFC3339))
 
 	// 状態を保存
 	diags = resp.State.Set(ctx, plan)

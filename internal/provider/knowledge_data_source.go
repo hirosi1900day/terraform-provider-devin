@@ -22,7 +22,6 @@ type KnowledgeDataSourceModel struct {
 	Body               types.String `tfsdk:"body"`
 	TriggerDescription types.String `tfsdk:"trigger_description"`
 	ParentFolderID     types.String `tfsdk:"parent_folder_id"`
-	CreatedAt          types.String `tfsdk:"created_at"`
 }
 
 // NewKnowledgeDataSource はナレッジデータソースのインスタンスを作成します
@@ -58,10 +57,6 @@ func (d *KnowledgeDataSource) Schema(_ context.Context, _ datasource.SchemaReque
 			},
 			"parent_folder_id": schema.StringAttribute{
 				Description: "親フォルダのID",
-				Computed:    true,
-			},
-			"created_at": schema.StringAttribute{
-				Description: "ナレッジの作成日時",
 				Computed:    true,
 			},
 		},
@@ -115,7 +110,6 @@ func (d *KnowledgeDataSource) Read(ctx context.Context, req datasource.ReadReque
 	config.Body = types.StringValue(knowledge.Body)
 	config.TriggerDescription = types.StringValue(knowledge.TriggerDescription)
 	config.ParentFolderID = types.StringValue(knowledge.ParentFolderID)
-	config.CreatedAt = types.StringValue(knowledge.CreatedAt.Format("2006-01-02T15:04:05Z"))
 
 	diags = resp.State.Set(ctx, config)
 	resp.Diagnostics.Append(diags...)

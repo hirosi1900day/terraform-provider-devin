@@ -1,19 +1,15 @@
 terraform {
   required_providers {
     devin = {
-      source = "hirosi1900day/devin"
+      source  = "hirosi1900day/devin"
+      version = "0.0.1"
     }
   }
 }
 
 provider "devin" {
-  # 環境変数 DEVIN_API_KEY で設定することも可能
-  api_key = var.devin_api_key
-}
-
-variable "devin_api_key" {
-  description = "Devin API Key"
-  sensitive   = true
+  # テスト用APIキーを設定
+  api_key = "test_api_key"
 }
 
 # ナレッジリソースを作成
@@ -44,8 +40,4 @@ output "knowledge_body" {
 
 output "knowledge_trigger_description" {
   value = data.devin_knowledge.example.trigger_description
-}
-
-output "knowledge_created_at" {
-  value = devin_knowledge.example.created_at
 }

@@ -16,8 +16,8 @@ build:
 	go build -o terraform-provider-devin
 
 install: build
-	mkdir -p ~/.terraform.d/plugins/registry.terraform.io/hirosi1900day/devin/1.0.0/$$(go env GOOS)_$$(go env GOARCH)
-	cp terraform-provider-devin ~/.terraform.d/plugins/registry.terraform.io/hirosi1900day/devin/1.0.0/$$(go env GOOS)_$$(go env GOARCH)/
+	mkdir -p ~/.terraform.d/plugins/registry.terraform.io/hirosi1900day/devin/0.0.1/$$(go env GOOS)_$$(go env GOARCH)
+	cp terraform-provider-devin ~/.terraform.d/plugins/registry.terraform.io/hirosi1900day/devin/0.0.1/$$(go env GOOS)_$$(go env GOARCH)/
 
 clean:
 	rm -f terraform-provider-devin

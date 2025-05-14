@@ -12,7 +12,10 @@
 - ナレッジリソースとデータソースの実装
 - モックデータを使用したテスト環境のサポート
 
-## [1.0.0] - 2025-05-13
+### 変更
+- ナレッジリソースとデータソースから `created_at` 属性を削除（Terraformで管理する必要のない属性）
+
+## [0.0.1] - 2025-05-14
 
 ### 追加
 - 初回リリース
@@ -21,5 +24,5 @@
 - Terraform Framework APIを使用した実装
 - モックデータ機能による開発・テストサポート
 
-[Unreleased]: https://github.com/hirosi1900day/terraform-provider-devin-knowledge/compare/v1.0.0...HEAD
-[1.0.0]: https://github.com/hirosi1900day/terraform-provider-devin-knowledge/releases/tag/v1.0.0
+[Unreleased]: https://github.com/hirosi1900day/terraform-provider-devin-knowledge/compare/v0.0.1...HEAD
+[0.0.1]: https://github.com/hirosi1900day/terraform-provider-devin-knowledge/releases/tag/v0.0.1

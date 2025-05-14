@@ -30,7 +30,7 @@ terraform {
   required_providers {
     devin = {
       source  = "hirosi1900day/devin"
-      version = "~> 1.0"
+      version = "~> 0.0.1"
     }
   }
 }
@@ -147,8 +147,8 @@ make build
 
 ```bash
 # For macOS/Linux
-mkdir -p ~/.terraform.d/plugins/registry.terraform.io/hirosi1900day/devin/1.0.0/$(go env GOOS)_$(go env GOARCH)
-cp terraform-provider-devin ~/.terraform.d/plugins/registry.terraform.io/hirosi1900day/devin/1.0.0/$(go env GOOS)_$(go env GOARCH)/
+mkdir -p ~/.terraform.d/plugins/registry.terraform.io/hirosi1900day/devin/0.0.1/$(go env GOOS)_$(go env GOARCH)
+cp terraform-provider-devin ~/.terraform.d/plugins/registry.terraform.io/hirosi1900day/devin/0.0.1/$(go env GOOS)_$(go env GOARCH)/
 ```
 
 2. Run the test Terraform code:
@@ -175,8 +175,8 @@ For more details, see [Terraform documentation](https://www.terraform.io/docs/cl
 1. Create a version tag:
 
 ```bash
-git tag v1.0.0
-git push origin v1.0.0
+git tag v0.0.1
+git push origin v0.0.1
 ```
 
 2. Create a GitHub release:

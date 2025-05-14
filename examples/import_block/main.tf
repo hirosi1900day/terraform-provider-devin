@@ -1,7 +1,8 @@
 terraform {
   required_providers {
     devin = {
-      source = "hirosi1900day/devin"
+      source  = "hirosi1900day/devin"
+      version = "0.0.1"
     }
   }
 }
@@ -40,9 +41,4 @@ output "imported_id" {
 # インポートしたリソースの名前を出力
 output "imported_name" {
   value = devin_knowledge.imported_block.name
-}
-
-# インポートしたリソースの作成日時を出力
-output "imported_created_at" {
-  value = devin_knowledge.imported_block.created_at
 } 
