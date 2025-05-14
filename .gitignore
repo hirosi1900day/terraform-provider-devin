@@ -23,6 +23,7 @@ terraform-provider-devin
 
 # Terraformの一時ファイル
 **/.terraform/*
+**/.terraform.d/*
 *.tfstate
 *.tfstate.*
 .terraformrc
@@ -32,6 +33,8 @@ terraform-provider-devin
 *.auto.tfvars.json
 terraform.rc
 .terraform.lock.hcl
+crash.log
+crash.*.log
 
 # ログファイル
 *.log
