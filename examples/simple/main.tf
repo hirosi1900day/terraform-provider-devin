@@ -8,8 +8,8 @@ terraform {
 }
 
 provider "devin" {
-  # APIキーは環境変数DEVIN_API_KEYで設定するか、下記の行のコメントを解除して設定
-  # api_key = "your-api-key-here"
+  # テスト用APIキーを設定
+  api_key = "test_api_key"
 }
 
 # ナレッジリソースを作成
