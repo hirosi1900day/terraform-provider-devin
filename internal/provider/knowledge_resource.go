@@ -155,7 +155,14 @@ func (r *KnowledgeResource) Read(ctx context.Context, req resource.ReadRequest, 
 	state.Name = types.StringValue(knowledge.Name)
 	state.Body = types.StringValue(knowledge.Body)
 	state.TriggerDescription = types.StringValue(knowledge.TriggerDescription)
-	state.ParentFolderID = types.StringValue(knowledge.ParentFolderID)
+
+	// ParentFolderIDがnullでない場合のみ値を更新
+	if knowledge.ParentFolderID != "" {
+		state.ParentFolderID = types.StringValue(knowledge.ParentFolderID)
+	} else if !state.ParentFolderID.IsNull() {
+		// APIが空文字を返したが、現在の状態には値がある場合は空文字に更新
+		state.ParentFolderID = types.StringValue("")
+	}
 
 	// 状態を保存
 	diags = resp.State.Set(ctx, state)
@@ -187,8 +194,11 @@ func (r *KnowledgeResource) Update(ctx context.Context, req resource.UpdateReque
 		"id": state.ID.ValueString(),
 	})
 
+	// 既存のIDを維持
+	plan.ID = state.ID
+
 	// ナレッジの更新
-	knowledge, err := r.client.UpdateKnowledge(
+	_, err := r.client.UpdateKnowledge(
 		state.ID.ValueString(),
 		plan.Name.ValueString(),
 		plan.Body.ValueString(),
@@ -202,9 +212,6 @@ func (r *KnowledgeResource) Update(ctx context.Context, req resource.UpdateReque
 		)
 		return
 	}
-
-	// モデルを更新
-	plan.ID = types.StringValue(knowledge.ID)
 
 	// 状態を保存
 	diags = resp.State.Set(ctx, plan)

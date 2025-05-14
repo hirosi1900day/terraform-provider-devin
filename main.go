@@ -11,7 +11,7 @@ import (
 
 // バージョン情報はビルド時に設定されます
 var (
-	version string = "dev"
+	version string = "0.0.2"
 )
 
 func main() {
