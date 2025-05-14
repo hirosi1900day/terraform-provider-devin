@@ -179,9 +179,31 @@ git tag v0.0.1
 git push origin v0.0.1
 ```
 
-2. Create a GitHub release:
-   - Create a release on the GitHub releases page
-   - Attach the built binaries to the release
+2. GitHub Actions will automatically:
+   - Run tests
+   - Build binaries for multiple platforms
+   - Create a GitHub release (initially as a draft)
+   - Sign the release with GPG
+   - Upload assets to the release
+
+3. Review the draft release on GitHub and publish it
+
+4. The provider will be available on Terraform Registry at `hirosi1900day/devin`
+
+### Publishing to Terraform Registry
+
+This provider is published on the [Terraform Registry](https://registry.terraform.io/providers/hirosi1900day/devin/latest). To use it in your Terraform configuration, add the following:
+
+```hcl
+terraform {
+  required_providers {
+    devin = {
+      source  = "hirosi1900day/devin"
+      version = "~> 0.0.1"
+    }
+  }
+}
+```
 
 ## Contributing
 
