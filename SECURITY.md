@@ -1,26 +1,26 @@
-# セキュリティポリシー
+# Security Policy
 
-## サポートされているバージョン
+## Supported Versions
 
-現在セキュリティアップデートでサポートされているバージョンは以下の通りです：
+Currently, the following versions are supported with security updates:
 
-| バージョン | サポート            |
-| -------- | ------------------ |
-| 0.x.x    | :white_check_mark: |
-| < 0.0.1  | :x:                |
+| Version | Supported          |
+| ------- | ------------------ |
+| 0.x.x   | :white_check_mark: |
+| < 0.0.1 | :x:                |
 
-## 脆弱性の報告
+## Reporting a Vulnerability
 
-セキュリティの脆弱性を発見した場合は、GitHub IssueではなくGitHubセキュリティアドバイザリーを使用して報告してください。これにより、脆弱性の影響範囲を評価し、修正パッチを準備できます。
+If you discover a security vulnerability, please use the GitHub Security Advisory feature rather than GitHub Issues to report it. This allows us to assess the impact of the vulnerability and prepare a fix.
 
-プロジェクトのGitHubリポジトリの「Security」タブから「Advisories」→「New draft security advisory」を選択し、脆弱性の詳細を記入してください。
+Please select "Security" tab in the project's GitHub repository, then "Advisories" → "New draft security advisory" and fill in the details of the vulnerability.
 
-報告していただいた脆弱性は、以下のプロセスで対応します：
+Reported vulnerabilities will be addressed through the following process:
 
-1. 報告された脆弱性の受領確認
-2. 脆弱性の検証と影響範囲の評価
-3. 修正プログラムの開発
-4. 新バージョンのリリース
-5. 脆弱性の公開（適切なタイミングで）
+1. Acknowledgment of the reported vulnerability
+2. Verification and impact assessment
+3. Development of a fix
+4. Release of a new version
+5. Public disclosure (at an appropriate time)
 
-ご協力ありがとうございます。
+Thank you for your cooperation.

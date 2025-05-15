@@ -8,24 +8,24 @@ terraform {
 }
 
 provider "devin" {
-  # テスト用APIキーを設定
+  # Set test API key
   api_key = "test_api_key"
 }
 
-# ナレッジリソースを作成
+# Create a knowledge resource
 resource "devin_knowledge" "example" {
-  name                = "サンプルナレッジ"
-  body                = "これはTerraformで作成されたサンプルナレッジです"
-  trigger_description = "このナレッジは特定の条件でトリガーされます"
-  # parent_folder_id    = "optional-folder-id" # 任意項目
+  name                = "Sample Knowledge"
+  body                = "This is a sample knowledge created with Terraform"
+  trigger_description = "This knowledge is triggered under specific conditions"
+  # parent_folder_id    = "optional-folder-id" # Optional parameter
 }
 
-# ナレッジリソースの情報を取得
+# Retrieve knowledge resource information
 data "devin_knowledge" "example" {
   id = devin_knowledge.example.id
 }
 
-# 出力
+# Output
 output "knowledge_id" {
   value = devin_knowledge.example.id
 }

@@ -13,18 +13,18 @@ import (
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 )
 
-// DevinProvider はTerraformのDevinプロバイダーを表します
+// DevinProvider represents the Terraform provider for Devin
 type DevinProvider struct {
-	// プロバイダーのバージョン
+	// provider version
 	version string
 }
 
-// DevinProviderModel はプロバイダーの設定構造体を表します
+// DevinProviderModel represents the provider configuration structure
 type DevinProviderModel struct {
 	APIKey types.String `tfsdk:"api_key"`
 }
 
-// New は新しいDevinプロバイダーインスタンスを返します
+// New returns a new instance of the Devin provider
 func New(version string) func() provider.Provider {
 	return func() provider.Provider {
 		return &DevinProvider{
@@ -33,18 +33,18 @@ func New(version string) func() provider.Provider {
 	}
 }
 
-// Metadata はプロバイダーのメタデータを返します
+// Metadata returns provider metadata
 func (p *DevinProvider) Metadata(_ context.Context, _ provider.MetadataRequest, resp *provider.MetadataResponse) {
 	resp.TypeName = "devin"
 	resp.Version = p.version
 }
 
-// Schema はプロバイダーのスキーマを定義します
+// Schema defines the provider's schema
 func (p *DevinProvider) Schema(_ context.Context, _ provider.SchemaRequest, resp *provider.SchemaResponse) {
 	resp.Schema = schema.Schema{
 		Attributes: map[string]schema.Attribute{
 			"api_key": schema.StringAttribute{
-				Description: "Devin APIのAPI Key。環境変数 DEVIN_API_KEY で設定することもできます。",
+				Description: "API Key for Devin API. Can also be set via the DEVIN_API_KEY environment variable.",
 				Optional:    true,
 				Sensitive:   true,
 			},
@@ -52,9 +52,9 @@ func (p *DevinProvider) Schema(_ context.Context, _ provider.SchemaRequest, resp
 	}
 }
 
-// Configure はプロバイダーの設定を行います
+// Configure configures the provider
 func (p *DevinProvider) Configure(ctx context.Context, req provider.ConfigureRequest, resp *provider.ConfigureResponse) {
-	tflog.Info(ctx, "Devinプロバイダーの設定を開始します")
+	tflog.Info(ctx, "Starting Devin provider configuration")
 
 	var config DevinProviderModel
 	diags := req.Config.Get(ctx, &config)
@@ -63,7 +63,7 @@ func (p *DevinProvider) Configure(ctx context.Context, req provider.ConfigureReq
 		return
 	}
 
-	// API Keyの設定
+	// Setting API Key
 	apiKey := os.Getenv("DEVIN_API_KEY")
 	if !config.APIKey.IsNull() {
 		apiKey = config.APIKey.ValueString()
@@ -72,29 +72,29 @@ func (p *DevinProvider) Configure(ctx context.Context, req provider.ConfigureReq
 	if apiKey == "" {
 		resp.Diagnostics.AddAttributeError(
 			path.Root("api_key"),
-			"API Keyが未設定です",
-			"Devin APIのAPI Keyを設定してください。Terraform設定または環境変数 DEVIN_API_KEY で設定できます。",
+			"API Key not set",
+			"Please set the API Key for Devin API. It can be set in Terraform configuration or via the DEVIN_API_KEY environment variable.",
 		)
 		return
 	}
 
-	// クライアントの作成
+	// Create client
 	client := NewClient(apiKey)
 
 	resp.ResourceData = client
 	resp.DataSourceData = client
 
-	tflog.Info(ctx, "Devinプロバイダーの設定が完了しました")
+	tflog.Info(ctx, "Devin provider configuration completed")
 }
 
-// Resources はプロバイダーが提供するリソースを定義します
+// Resources defines the resources provided by this provider
 func (p *DevinProvider) Resources(_ context.Context) []func() resource.Resource {
 	return []func() resource.Resource{
 		NewKnowledgeResource,
 	}
 }
 
-// DataSources はプロバイダーが提供するデータソースを定義します
+// DataSources defines the data sources provided by this provider
 func (p *DevinProvider) DataSources(_ context.Context) []func() datasource.DataSource {
 	return []func() datasource.DataSource{
 		NewKnowledgeDataSource,

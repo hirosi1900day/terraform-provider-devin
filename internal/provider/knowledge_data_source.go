@@ -10,12 +10,12 @@ import (
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 )
 
-// KnowledgeDataSource はナレッジデータソースの型定義
+// KnowledgeDataSource defines the type for knowledge data source
 type KnowledgeDataSource struct {
 	client *DevinClient
 }
 
-// KnowledgeDataSourceModel はTerraformデータソースのスキーマを表す構造体
+// KnowledgeDataSourceModel represents the schema structure for the Terraform data source
 type KnowledgeDataSourceModel struct {
 	ID                 types.String `tfsdk:"id"`
 	Name               types.String `tfsdk:"name"`
@@ -24,46 +24,46 @@ type KnowledgeDataSourceModel struct {
 	ParentFolderID     types.String `tfsdk:"parent_folder_id"`
 }
 
-// NewKnowledgeDataSource はナレッジデータソースのインスタンスを作成します
+// NewKnowledgeDataSource creates an instance of the knowledge data source
 func NewKnowledgeDataSource() datasource.DataSource {
 	return &KnowledgeDataSource{}
 }
 
-// Metadata はデータソースのメタデータを設定します
+// Metadata sets the data source metadata
 func (d *KnowledgeDataSource) Metadata(_ context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
 	resp.TypeName = req.ProviderTypeName + "_knowledge"
 }
 
-// Schema はデータソースのスキーマを定義します
+// Schema defines the data source schema
 func (d *KnowledgeDataSource) Schema(_ context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		Description: "Devin APIのナレッジ情報を取得します",
+		Description: "Retrieves knowledge information from the Devin API",
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
-				Description: "ナレッジのID",
+				Description: "The ID of the knowledge resource",
 				Required:    true,
 			},
 			"name": schema.StringAttribute{
-				Description: "ナレッジの名前",
+				Description: "The name of the knowledge resource",
 				Computed:    true,
 			},
 			"body": schema.StringAttribute{
-				Description: "ナレッジの内容",
+				Description: "The content of the knowledge resource",
 				Computed:    true,
 			},
 			"trigger_description": schema.StringAttribute{
-				Description: "ナレッジのトリガー説明",
+				Description: "The trigger description for the knowledge resource",
 				Computed:    true,
 			},
 			"parent_folder_id": schema.StringAttribute{
-				Description: "親フォルダのID",
+				Description: "The ID of the parent folder",
 				Computed:    true,
 			},
 		},
 	}
 }
 
-// Configure はデータソースの設定を行います
+// Configure configures the data source
 func (d *KnowledgeDataSource) Configure(_ context.Context, req datasource.ConfigureRequest, resp *datasource.ConfigureResponse) {
 	if req.ProviderData == nil {
 		return
@@ -72,8 +72,8 @@ func (d *KnowledgeDataSource) Configure(_ context.Context, req datasource.Config
 	client, ok := req.ProviderData.(*DevinClient)
 	if !ok {
 		resp.Diagnostics.AddError(
-			"予期しないデータソース設定タイプ",
-			fmt.Sprintf("予期していないプロバイダデータ型を受け取りました: %T。*DevinClient を期待していました。", req.ProviderData),
+			"Unexpected data source configure type",
+			fmt.Sprintf("Expected *DevinClient, got: %T. Please report this issue to the provider developers.", req.ProviderData),
 		)
 		return
 	}
@@ -81,7 +81,7 @@ func (d *KnowledgeDataSource) Configure(_ context.Context, req datasource.Config
 	d.client = client
 }
 
-// Read はナレッジの情報を読み取ります
+// Read reads the knowledge information
 func (d *KnowledgeDataSource) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
 	var config KnowledgeDataSourceModel
 	diags := req.Config.Get(ctx, &config)
@@ -91,21 +91,21 @@ func (d *KnowledgeDataSource) Read(ctx context.Context, req datasource.ReadReque
 	}
 
 	knowledgeID := config.ID.ValueString()
-	tflog.Info(ctx, "ナレッジデータの取得を開始します", map[string]interface{}{
+	tflog.Info(ctx, "Starting knowledge data retrieval", map[string]interface{}{
 		"id": knowledgeID,
 	})
 
-	// ナレッジの取得
+	// Get knowledge
 	knowledge, err := d.client.GetKnowledge(knowledgeID)
 	if err != nil {
 		resp.Diagnostics.AddError(
-			"ナレッジの取得に失敗しました",
-			fmt.Sprintf("Devin APIへのリクエスト中にエラーが発生しました: %s", err),
+			"Failed to retrieve knowledge",
+			fmt.Sprintf("Error during Devin API request: %s", err),
 		)
 		return
 	}
 
-	// データを設定
+	// Set data
 	config.Name = types.StringValue(knowledge.Name)
 	config.Body = types.StringValue(knowledge.Body)
 	config.TriggerDescription = types.StringValue(knowledge.TriggerDescription)
@@ -117,5 +117,5 @@ func (d *KnowledgeDataSource) Read(ctx context.Context, req datasource.ReadReque
 		return
 	}
 
-	tflog.Info(ctx, "ナレッジデータの取得が完了しました")
+	tflog.Info(ctx, "Knowledge data retrieval completed")
 }

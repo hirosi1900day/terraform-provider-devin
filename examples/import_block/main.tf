@@ -8,37 +8,37 @@ terraform {
 }
 
 provider "devin" {
-  api_key = "test_api_key" # 本番環境では環境変数またはTerraform Cloudの変数として設定
+  api_key = "test_api_key" # In production, set this as an environment variable or Terraform Cloud variable
 }
 
-# importブロックを使用して既存のナレッジリソースをインポートする
-# このブロックはterraform applyを実行すると、リソースをインポートし、その役割を終えます
-# 一度インポートが完了したら、このブロックはコメントアウトするか削除しても問題ありません
+# Use an import block to import existing knowledge resource
+# This block imports the resource when terraform apply is executed, and then its job is done
+# Once the import is complete, you can comment out or remove this block
 import {
   to = devin_knowledge.imported_block
   id = "mock-knowledge-1"
 }
 
-# インポートされたリソースの定義
+# Definition of the imported resource
 resource "devin_knowledge" "imported_block" {
-  name                = "モックナレッジ1"
-  body                = "これはテスト用のモックナレッジです"
-  trigger_description = "テスト用トリガーの説明"
+  name                = "Mock Knowledge 1"
+  body                = "This is a mock knowledge for testing"
+  trigger_description = "Test trigger description"
 }
 
-# 通常のナレッジリソースの定義
+# Definition of a regular knowledge resource
 resource "devin_knowledge" "example" {
-  name                = "サンプルナレッジ"
-  body                = "これはTerraformで作成されたサンプルナレッジです"
-  trigger_description = "このナレッジは特定の条件でトリガーされます"
+  name                = "Sample Knowledge"
+  body                = "This is a sample knowledge created with Terraform"
+  trigger_description = "This knowledge is triggered under specific conditions"
 }
 
-# インポートしたリソースのIDを出力
+# Output the imported resource ID
 output "imported_id" {
   value = devin_knowledge.imported_block.id
 }
 
-# インポートしたリソースの名前を出力
+# Output the imported resource name
 output "imported_name" {
   value = devin_knowledge.imported_block.name
 } 

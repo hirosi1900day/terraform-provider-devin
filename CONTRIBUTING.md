@@ -1,62 +1,62 @@
-# 貢献ガイドライン
+# Contributing Guidelines
 
-このプロジェクトへの貢献を検討していただきありがとうございます！このガイドでは、貢献のプロセスと期待事項を概説します。
+Thank you for considering contributing to this project! This guide outlines the contribution process and expectations.
 
-## 貢献方法
+## How to Contribute
 
-1. このリポジトリをフォークする
-2. 機能ブランチを作成する（`git checkout -b feature/amazing-feature`）
-3. 変更をコミットする（`git commit -m 'Add some amazing feature'`）
-4. ブランチにプッシュする（`git push origin feature/amazing-feature`）
-5. プルリクエストを開く
+1. Fork this repository
+2. Create a feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add some amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
 
-## 開発環境のセットアップ
+## Setting Up Development Environment
 
 ```bash
-# リポジトリのクローン
+# Clone the repository
 git clone https://github.com/your-username/devin-terraform.git
 cd devin-terraform
 
-# 依存関係のインストール
+# Install dependencies
 go mod tidy
 
-# ビルド
+# Build
 make build
 
-# テスト
+# Test
 make test
 ```
 
-## プルリクエストのガイドライン
+## Pull Request Guidelines
 
-1. コードはGoの標準スタイルに従ってフォーマットされていること
-2. すべてのテストが通ること
-3. 新しい機能には対応するテストが含まれていること
-4. 変更内容を明確に説明するプルリクエストの説明を含めること
+1. Code should be formatted according to Go standard style
+2. All tests should pass
+3. New features should include corresponding tests
+4. Include a clear PR description explaining the changes
 
-## コミットメッセージのガイドライン
+## Commit Message Guidelines
 
-コミットメッセージは以下の形式に従ってください：
+Please follow this format for commit messages:
 
 ```
-feat: 新機能の追加
-fix: バグ修正
-docs: ドキュメントのみの変更
-style: コードの動作に影響しない変更（フォーマット等）
-refactor: バグ修正や機能追加を伴わないコードの変更
-perf: パフォーマンス向上のための変更
-test: テストの追加や修正
-chore: ビルドプロセスやツールの変更
+feat: Add new feature
+fix: Bug fix
+docs: Documentation-only changes
+style: Changes that do not affect code behavior (formatting, etc.)
+refactor: Code changes that neither fix bugs nor add features
+perf: Changes that improve performance
+test: Adding or correcting tests
+chore: Changes to build process or tools
 ```
 
-## コードレビュープロセス
+## Code Review Process
 
-プルリクエストはメンテナーによってレビューされます。レビュープロセスを円滑に進めるために：
+Pull requests are reviewed by maintainers. To facilitate the review process:
 
-1. プルリクエストを小さくして、変更の目的を明確にする
-2. コードにコメントを追加して、複雑な部分を説明する
-3. レビューからのフィードバックに対応する
+1. Keep pull requests small and focused on a clear objective
+2. Add comments to your code to explain complex sections
+3. Respond to feedback from reviews
 
-## ライセンス
+## License
 
-プロジェクトへの貢献は、プロジェクトと同じライセンス（MIT）の下でライセンスされるものとします。
+Contributions to the project are licensed under the same license as the project (MIT).

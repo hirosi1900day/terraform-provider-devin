@@ -1,26 +1,26 @@
-# importブロックの使用例
+# Import Block Usage Example
 
-このディレクトリには、Terraform 1.5以降で導入された「importブロック」を使って既存のDevin APIナレッジリソースをインポートする例が含まれています。
+This directory contains an example of importing existing Devin API knowledge resources using the "import block" feature introduced in Terraform 1.5 and later.
 
-## 準備
+## Preparation
 
-1. まず、このディレクトリで初期化を行います：
+1. First, initialize this directory:
 
 ```bash
 terraform init
 ```
 
-## importブロックの仕組み
+## How Import Blocks Work
 
-従来のコマンドラインからのインポート（`terraform import`）と異なり、importブロックは設定ファイル内に宣言的に記述します。これにより：
+Unlike traditional command-line imports (`terraform import`), import blocks are declared in the configuration file. This provides:
 
-- インポート操作がコードとして管理できる
-- CIパイプラインでの自動化が容易になる
-- インポート処理が再現可能になる
+- Import operations can be managed as code
+- Easier automation in CI pipelines
+- Reproducible import processes
 
-## 使用方法
+## Usage
 
-1. `main.tf`ファイルに、以下のようなimportブロックが含まれています：
+1. The `main.tf` file includes an import block like this:
 
 ```hcl
 import {
@@ -29,44 +29,44 @@ import {
 }
 
 resource "devin_knowledge" "imported_block" {
-  name                = "モックナレッジ1"
-  body                = "これはテスト用のモックナレッジです"
-  trigger_description = "テスト用トリガーの説明"
+  name                = "Mock Knowledge 1"
+  body                = "This is a mock knowledge for testing"
+  trigger_description = "Test trigger description"
 }
 ```
 
-2. 以下のコマンドを実行して、importブロックを適用します：
+2. Run the following commands to apply the import block:
 
 ```bash
 terraform plan
 terraform apply
 ```
 
-3. インポート完了後は、通常のリソースとして管理できます。
+3. After completion, you can manage it as a regular resource.
 
-## 再実行方法
+## Re-running Import
 
-インポートをやり直したい場合は、以下の手順で操作します：
+To redo the import, follow these steps:
 
-1. 状態ファイルからリソースを削除します：
+1. Remove the resource from the state file:
 
 ```bash
 terraform state rm devin_knowledge.imported_block
 ```
 
-2. 再度 `terraform plan` と `terraform apply` を実行します。
+2. Run `terraform plan` and `terraform apply` again.
 
-## 複数リソースのインポート
+## Importing Multiple Resources
 
-`main.tf`ファイルにはコメントアウトされた状態で複数リソースのインポート例も含まれています。複数のリソースをインポートするには、コメントを解除して必要に応じて修正してください。
+The `main.tf` file also includes commented-out examples of importing multiple resources. To import multiple resources, uncomment and modify as needed.
 
-## 注意点
+## Notes
 
-- importブロックは一度適用されると、その役割を終えます。適用後のファイルからimportブロックを削除しても問題ありません。
-- 適切なリソース属性を事前に指定しておくことで、インポート後の変更を最小限に抑えられます。
-- テスト用のAPI Keyを使用する場合は、`test_api_key`を使用することでモックサーバーが利用されます。
-- 実際の環境では、APIキーを環境変数（`DEVIN_API_KEY`）として設定するか、`api_key`パラメータに直接指定します。
+- Import blocks fulfill their purpose once applied. You can remove import blocks from the file after applying them.
+- Specifying appropriate resource attributes in advance minimizes changes needed after import.
+- When using a test API Key, use `test_api_key` to utilize the mock server.
+- In production environments, set the API key as an environment variable (`DEVIN_API_KEY`) or specify it directly in the `api_key` parameter.
 
-## その他の情報
+## More Information
 
-詳細は[Terraform公式ドキュメント](https://developer.hashicorp.com/terraform/language/import)を参照してください。 
+For more details, refer to the [official Terraform documentation](https://developer.hashicorp.com/terraform/language/import). 

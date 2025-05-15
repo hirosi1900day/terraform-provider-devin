@@ -13,12 +13,12 @@ import (
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 )
 
-// KnowledgeResource はナレッジリソースの型定義
+// KnowledgeResource defines the type for knowledge resources
 type KnowledgeResource struct {
 	client *DevinClient
 }
 
-// KnowledgeResourceModel はTerraformリソースのスキーマを表す構造体
+// KnowledgeResourceModel represents the schema structure for the Terraform resource
 type KnowledgeResourceModel struct {
 	ID                 types.String `tfsdk:"id"`
 	Name               types.String `tfsdk:"name"`
@@ -27,49 +27,49 @@ type KnowledgeResourceModel struct {
 	ParentFolderID     types.String `tfsdk:"parent_folder_id"`
 }
 
-// NewKnowledgeResource はナレッジリソースのインスタンスを作成します
+// NewKnowledgeResource creates an instance of the knowledge resource
 func NewKnowledgeResource() resource.Resource {
 	return &KnowledgeResource{}
 }
 
-// Metadata はリソースのメタデータを設定します
+// Metadata sets the resource metadata
 func (r *KnowledgeResource) Metadata(_ context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
 	resp.TypeName = req.ProviderTypeName + "_knowledge"
 }
 
-// Schema はリソースのスキーマを定義します
+// Schema defines the resource schema
 func (r *KnowledgeResource) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		Description: "Devin APIのナレッジリソースを管理します",
+		Description: "Manages knowledge resources in the Devin API",
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
-				Description: "ナレッジのID",
+				Description: "The ID of the knowledge resource",
 				Computed:    true,
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.UseStateForUnknown(),
 				},
 			},
 			"name": schema.StringAttribute{
-				Description: "ナレッジの名前",
+				Description: "The name of the knowledge resource",
 				Required:    true,
 			},
 			"body": schema.StringAttribute{
-				Description: "ナレッジの内容",
+				Description: "The content of the knowledge resource",
 				Required:    true,
 			},
 			"trigger_description": schema.StringAttribute{
-				Description: "ナレッジのトリガー説明",
+				Description: "The trigger description for the knowledge resource",
 				Required:    true,
 			},
 			"parent_folder_id": schema.StringAttribute{
-				Description: "親フォルダのID",
+				Description: "The ID of the parent folder",
 				Optional:    true,
 			},
 		},
 	}
 }
 
-// Configure はリソースの設定を行います
+// Configure configures the resource
 func (r *KnowledgeResource) Configure(_ context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
 	if req.ProviderData == nil {
 		return
@@ -78,8 +78,8 @@ func (r *KnowledgeResource) Configure(_ context.Context, req resource.ConfigureR
 	client, ok := req.ProviderData.(*DevinClient)
 	if !ok {
 		resp.Diagnostics.AddError(
-			"予期しないリソース設定タイプ",
-			fmt.Sprintf("予期していないプロバイダデータ型を受け取りました: %T。*DevinClient を期待していました。", req.ProviderData),
+			"Unexpected resource configure type",
+			fmt.Sprintf("Expected *DevinClient, got: %T. Please report this issue to the provider developers.", req.ProviderData),
 		)
 		return
 	}
@@ -87,7 +87,7 @@ func (r *KnowledgeResource) Configure(_ context.Context, req resource.ConfigureR
 	r.client = client
 }
 
-// Create はナレッジリソースを作成します
+// Create creates a knowledge resource
 func (r *KnowledgeResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
 	var plan KnowledgeResourceModel
 	diags := req.Plan.Get(ctx, &plan)
@@ -96,9 +96,9 @@ func (r *KnowledgeResource) Create(ctx context.Context, req resource.CreateReque
 		return
 	}
 
-	tflog.Info(ctx, "ナレッジリソースの作成を開始します")
+	tflog.Info(ctx, "Starting knowledge resource creation")
 
-	// ナレッジの作成
+	// Create knowledge
 	knowledge, err := r.client.CreateKnowledge(
 		plan.Name.ValueString(),
 		plan.Body.ValueString(),
@@ -107,28 +107,28 @@ func (r *KnowledgeResource) Create(ctx context.Context, req resource.CreateReque
 	)
 	if err != nil {
 		resp.Diagnostics.AddError(
-			"ナレッジの作成に失敗しました",
-			fmt.Sprintf("Devin APIへのリクエスト中にエラーが発生しました: %s", err),
+			"Failed to create knowledge",
+			fmt.Sprintf("Error during Devin API request: %s", err),
 		)
 		return
 	}
 
-	// モデルを更新
+	// Update model
 	plan.ID = types.StringValue(knowledge.ID)
 
-	// 状態を保存
+	// Save state
 	diags = resp.State.Set(ctx, plan)
 	resp.Diagnostics.Append(diags...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
-	tflog.Info(ctx, "ナレッジリソースの作成が完了しました", map[string]interface{}{
+	tflog.Info(ctx, "Knowledge resource creation completed", map[string]interface{}{
 		"id": knowledge.ID,
 	})
 }
 
-// Read はナレッジリソースの情報を読み取ります
+// Read reads a knowledge resource
 func (r *KnowledgeResource) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
 	var state KnowledgeResourceModel
 	diags := req.State.Get(ctx, &state)
@@ -137,44 +137,44 @@ func (r *KnowledgeResource) Read(ctx context.Context, req resource.ReadRequest, 
 		return
 	}
 
-	tflog.Info(ctx, "ナレッジリソースの情報を取得します", map[string]interface{}{
+	tflog.Info(ctx, "Retrieving knowledge resource information", map[string]interface{}{
 		"id": state.ID.ValueString(),
 	})
 
-	// ナレッジの取得
+	// Get knowledge
 	knowledge, err := r.client.GetKnowledge(state.ID.ValueString())
 	if err != nil {
 		resp.Diagnostics.AddError(
-			"ナレッジの取得に失敗しました",
-			fmt.Sprintf("Devin APIへのリクエスト中にエラーが発生しました: %s", err),
+			"Failed to retrieve knowledge",
+			fmt.Sprintf("Error during Devin API request: %s", err),
 		)
 		return
 	}
 
-	// モデルを更新
+	// Update model
 	state.Name = types.StringValue(knowledge.Name)
 	state.Body = types.StringValue(knowledge.Body)
 	state.TriggerDescription = types.StringValue(knowledge.TriggerDescription)
 
-	// ParentFolderIDがnullでない場合のみ値を更新
+	// Update ParentFolderID only if not null
 	if knowledge.ParentFolderID != "" {
 		state.ParentFolderID = types.StringValue(knowledge.ParentFolderID)
 	} else if !state.ParentFolderID.IsNull() {
-		// APIが空文字を返したが、現在の状態には値がある場合は空文字に更新
+		// If API returns empty string but current state has a value, update to empty string
 		state.ParentFolderID = types.StringValue("")
 	}
 
-	// 状態を保存
+	// Save state
 	diags = resp.State.Set(ctx, state)
 	resp.Diagnostics.Append(diags...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
-	tflog.Info(ctx, "ナレッジリソースの情報取得が完了しました")
+	tflog.Info(ctx, "Knowledge resource information retrieval completed")
 }
 
-// Update はナレッジリソースを更新します
+// Update updates a knowledge resource
 func (r *KnowledgeResource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
 	var plan KnowledgeResourceModel
 	diags := req.Plan.Get(ctx, &plan)
@@ -190,14 +190,14 @@ func (r *KnowledgeResource) Update(ctx context.Context, req resource.UpdateReque
 		return
 	}
 
-	tflog.Info(ctx, "ナレッジリソースの更新を開始します", map[string]interface{}{
+	tflog.Info(ctx, "Starting knowledge resource update", map[string]interface{}{
 		"id": state.ID.ValueString(),
 	})
 
-	// 既存のIDを維持
+	// Maintain existing ID
 	plan.ID = state.ID
 
-	// ナレッジの更新
+	// Update knowledge
 	_, err := r.client.UpdateKnowledge(
 		state.ID.ValueString(),
 		plan.Name.ValueString(),
@@ -207,23 +207,23 @@ func (r *KnowledgeResource) Update(ctx context.Context, req resource.UpdateReque
 	)
 	if err != nil {
 		resp.Diagnostics.AddError(
-			"ナレッジの更新に失敗しました",
-			fmt.Sprintf("Devin APIへのリクエスト中にエラーが発生しました: %s", err),
+			"Failed to update knowledge",
+			fmt.Sprintf("Error during Devin API request: %s", err),
 		)
 		return
 	}
 
-	// 状態を保存
+	// Save state
 	diags = resp.State.Set(ctx, plan)
 	resp.Diagnostics.Append(diags...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
-	tflog.Info(ctx, "ナレッジリソースの更新が完了しました")
+	tflog.Info(ctx, "Knowledge resource update completed")
 }
 
-// Delete はナレッジリソースを削除します
+// Delete deletes a knowledge resource
 func (r *KnowledgeResource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
 	var state KnowledgeResourceModel
 	diags := req.State.Get(ctx, &state)
@@ -232,33 +232,33 @@ func (r *KnowledgeResource) Delete(ctx context.Context, req resource.DeleteReque
 		return
 	}
 
-	tflog.Info(ctx, "ナレッジリソースの削除を開始します", map[string]interface{}{
+	tflog.Info(ctx, "Starting knowledge resource deletion", map[string]interface{}{
 		"id": state.ID.ValueString(),
 	})
 
-	// ナレッジの削除
+	// Delete knowledge
 	err := r.client.DeleteKnowledge(state.ID.ValueString())
 	if err != nil {
 		resp.Diagnostics.AddError(
-			"ナレッジの削除に失敗しました",
-			fmt.Sprintf("Devin APIへのリクエスト中にエラーが発生しました: %s", err),
+			"Failed to delete knowledge",
+			fmt.Sprintf("Error during Devin API request: %s", err),
 		)
 		return
 	}
 
-	tflog.Info(ctx, "ナレッジリソースの削除が完了しました")
+	tflog.Info(ctx, "Knowledge resource deletion completed")
 }
 
-// ImportState はナレッジリソースをインポートします
+// ImportState imports a knowledge resource
 func (r *KnowledgeResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
-	tflog.Info(ctx, "ナレッジリソースのインポートを開始します", map[string]interface{}{
+	tflog.Info(ctx, "Starting knowledge resource import", map[string]interface{}{
 		"id": req.ID,
 	})
 
-	// インポートIDをナレッジIDとして設定
-	// ナレッジIDを状態のid属性に設定
+	// Set import ID as knowledge ID
+	// Set knowledge ID to id attribute in state
 	diags := resp.State.SetAttribute(ctx, path.Root("id"), req.ID)
 	resp.Diagnostics.Append(diags...)
 
-	tflog.Info(ctx, "ナレッジリソースのインポートが完了しました")
+	tflog.Info(ctx, "Knowledge resource import completed")
 }

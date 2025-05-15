@@ -1,17 +1,17 @@
-# 変更履歴
+# Changelog
 
-このプロジェクトへの全ての重要な変更はこのファイルに記録されます。
+All notable changes to this project will be documented in this file.
 
-フォーマットは[Keep a Changelog](https://keepachangelog.com/ja/1.0.0/)に基づいており、
-このプロジェクトは[Semantic Versioning](https://semver.org/lang/ja/)に準拠しています。
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
+and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [0.0.1] - 2025-05-14
 
-### 追加
-- 初回リリース
-- ナレッジリソースの作成、読取、更新、削除機能
-- ナレッジデータソースの実装
-- Terraform Framework APIを使用した実装
-- モックデータ機能による開発・テストサポート
+### Added
+- Initial release
+- Create, read, update, and delete functionality for knowledge resources
+- Implementation of knowledge data source
+- Implementation using Terraform Framework API
+- Development and testing support with mock data functionality
 
 [0.0.1]: https://github.com/hirosi1900day/terraform-provider-devin-knowledge/releases/tag/v0.0.1

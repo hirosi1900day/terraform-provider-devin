@@ -9,6 +9,15 @@ This repository contains a Terraform Provider for managing [Devin AI](https://de
 
 The Devin Terraform Provider allows you to manage Devin AI knowledge resources as infrastructure as code. This enables you to maintain knowledge creation, updating, and deletion operations as version-controlled configuration files.
 
+## Knowledge Feature
+
+The provider now supports the Knowledge feature, which allows you to:
+
+- Create and manage knowledge resources that can be used by Devin AI
+- Set triggers for knowledge activation
+- Organize knowledge in folder hierarchies
+- Import existing knowledge resources into Terraform
+
 ## Features
 
 - Create knowledge resources

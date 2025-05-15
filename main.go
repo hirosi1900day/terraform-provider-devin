@@ -9,7 +9,7 @@ import (
 	"github.com/hirosi1900day/terraform-provider-devin-knowledge/internal/provider"
 )
 
-// バージョン情報はビルド時に設定されます
+// Version information will be set at build time
 var (
 	version string = "0.0.2"
 )
@@ -17,7 +17,7 @@ var (
 func main() {
 	var debug bool
 
-	flag.BoolVar(&debug, "debug", false, "デバッグモードで実行する")
+	flag.BoolVar(&debug, "debug", false, "Run in debug mode")
 	flag.Parse()
 
 	opts := providerserver.ServeOpts{
