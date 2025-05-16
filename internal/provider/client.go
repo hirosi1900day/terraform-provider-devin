@@ -171,8 +171,8 @@ func (c *DevinClient) GetKnowledge(id string) (*Knowledge, error) {
 
 	// Search for knowledge resource with matching ID
 	for _, item := range response.Knowledge {
-		if item.ID == id {
-			// Return the found knowledge resource
+		noteID := "note-" + id
+		if item.ID == noteID {
 			return &Knowledge{
 				ID:                 item.ID,
 				Name:               item.Name,
