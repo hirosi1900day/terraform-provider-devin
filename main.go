@@ -13,7 +13,7 @@ import (
 
 // Version information will be set at build time
 var (
-	version string = "0.0.2"
+	version string = "0.0.3"
 )
 
 func main() {
