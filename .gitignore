@@ -47,3 +47,5 @@ crash.*.log
 
 # キャッシュディレクトリ
 .cache/
+
+*.tf.bak

@@ -9,9 +9,11 @@ import (
 	"github.com/hirosi1900day/terraform-provider-devin-knowledge/internal/provider"
 )
 
+//go:generate go run github.com/hashicorp/terraform-plugin-docs/cmd/tfplugindocs generate --provider-name devin
+
 // Version information will be set at build time
 var (
-	version string = "0.0.2"
+	version string = "0.0.1"
 )
 
 func main() {
