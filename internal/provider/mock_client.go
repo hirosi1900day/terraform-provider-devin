@@ -120,3 +120,47 @@ func UpdateMockKnowledge(id, name, body string, triggerDescription, parentFolder
 		CreatedAt:          time.Now().Add(-24 * time.Hour),
 	}
 }
+
+// GetMockFolderByID はモックフォルダリソースをIDで取得します
+func GetMockFolderByID(id string) (*FolderItem, error) {
+	switch id {
+	case "mock-folder-1":
+		return &FolderItem{
+			ID:          "mock-folder-1",
+			Name:        "モックフォルダ1",
+			Description: "これはテスト用のモックフォルダです",
+			CreatedAt:   time.Now().Add(-72 * time.Hour),
+		}, nil
+	case "mock-folder-2":
+		return &FolderItem{
+			ID:          "mock-folder-2",
+			Name:        "モックフォルダ2",
+			Description: "これは別のテスト用のモックフォルダです",
+			CreatedAt:   time.Now().Add(-96 * time.Hour),
+		}, nil
+	default:
+		return nil, fmt.Errorf("フォルダが見つかりません: ID %s", id)
+	}
+}
+
+// GetMockFolderByName はモックフォルダリソースを名前で取得します
+func GetMockFolderByName(name string) (*FolderItem, error) {
+	switch name {
+	case "モックフォルダ1":
+		return &FolderItem{
+			ID:          "mock-folder-1",
+			Name:        "モックフォルダ1",
+			Description: "これはテスト用のモックフォルダです",
+			CreatedAt:   time.Now().Add(-72 * time.Hour),
+		}, nil
+	case "モックフォルダ2":
+		return &FolderItem{
+			ID:          "mock-folder-2",
+			Name:        "モックフォルダ2",
+			Description: "これは別のテスト用のモックフォルダです",
+			CreatedAt:   time.Now().Add(-96 * time.Hour),
+		}, nil
+	default:
+		return nil, fmt.Errorf("フォルダが見つかりません: 名前 %s", name)
+	}
+}
