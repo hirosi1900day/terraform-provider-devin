@@ -256,3 +256,57 @@ func (c *DevinClient) DeleteKnowledge(id string) error {
 	_, err := c.sendRequest("DELETE", path, nil)
 	return err
 }
+
+// GetFolderByID retrieves a folder resource by ID
+// Note: Currently, the Devin API does not explicitly expose a dedicated endpoint
+// for retrieving individual folder resources, so we use the List API to extract
+// a specific folder resource by ID
+func (c *DevinClient) GetFolderByID(id string) (*FolderItem, error) {
+	// Return mock data for demo (development/testing)
+	if IsMockClient(c.APIKey) {
+		return GetMockFolderByID(id)
+	}
+
+	// Normal processing
+	// Use the list API to get all knowledge resources (which includes folders)
+	response, err := c.ListKnowledge()
+	if err != nil {
+		return nil, fmt.Errorf("error occurred while retrieving folder list: %w", err)
+	}
+
+	// Search for folder resource with matching ID
+	for _, item := range response.Folders {
+		if item.ID == id {
+			return &item, nil
+		}
+	}
+
+	return nil, fmt.Errorf("folder resource with ID '%s' not found", id)
+}
+
+// GetFolderByName retrieves a folder resource by name
+// Note: Currently, the Devin API does not explicitly expose a dedicated endpoint
+// for retrieving individual folder resources, so we use the List API to extract
+// a specific folder resource by name
+func (c *DevinClient) GetFolderByName(name string) (*FolderItem, error) {
+	// Return mock data for demo (development/testing)
+	if IsMockClient(c.APIKey) {
+		return GetMockFolderByName(name)
+	}
+
+	// Normal processing
+	// Use the list API to get all knowledge resources (which includes folders)
+	response, err := c.ListKnowledge()
+	if err != nil {
+		return nil, fmt.Errorf("error occurred while retrieving folder list: %w", err)
+	}
+
+	// Search for folder resource with matching name
+	for _, item := range response.Folders {
+		if item.Name == name {
+			return &item, nil
+		}
+	}
+
+	return nil, fmt.Errorf("folder resource with name '%s' not found", name)
+}

@@ -98,5 +98,6 @@ func (p *DevinProvider) Resources(_ context.Context) []func() resource.Resource 
 func (p *DevinProvider) DataSources(_ context.Context) []func() datasource.DataSource {
 	return []func() datasource.DataSource{
 		NewKnowledgeDataSource,
+		NewFolderDataSource,
 	}
 }
