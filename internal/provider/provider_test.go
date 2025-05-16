@@ -82,7 +82,7 @@ func TestProviderDataSources(t *testing.T) {
 	p := &DevinProvider{version: "test"}
 	dataSources := p.DataSources(ctx)
 
-	if len(dataSources) != 1 {
-		t.Fatalf("DataSources() returned %d data sources, want 1", len(dataSources))
+	if len(dataSources) != 2 {
+		t.Fatalf("DataSources() returned %d data sources, want 2", len(dataSources))
 	}
 }
