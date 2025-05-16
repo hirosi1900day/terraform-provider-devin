@@ -1,0 +1,12 @@
+# This file defines the code owners for the repository
+# Each line contains a file pattern followed by one or more owners
+# For more information, see the documentation:
+# https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners
+
+# These owners will be the default owners for everything in the repository
+* @hirosi1900day
+
+# Examples: Specify owners for specific directories
+# /docs/ @hirosi1900day
+# /internal/ @hirosi1900day
+# /examples/ @hirosi1900day
