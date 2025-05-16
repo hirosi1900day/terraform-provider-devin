@@ -1,43 +1,43 @@
-## 変更内容
+## Description of Changes
 
 <!-- 
-変更内容の概要を説明してください。
-この変更が必要な理由も説明してください。
-関連するIssueがあれば、「fixes #(issue number)」という形式で記載してください。
+Please provide a summary of your changes.
+Explain why this change is necessary.
+If there are related issues, please include "fixes #(issue number)" to link them.
 -->
 
-## 変更の種類
+## Type of Change
 
-<!-- 該当する項目に「x」を入れてください -->
+<!-- Please mark the relevant option with an "x" -->
 
-- [ ] バグ修正（下位互換性のある変更で、既存機能の修正）
-- [ ] 新機能（下位互換性のある変更で、新しい機能の追加）
-- [ ] 破壊的変更（既存の機能に影響を与える変更）
-- [ ] ドキュメントの更新
-- [ ] コードのリファクタリング
-- [ ] テストの追加または修正
-- [ ] その他（詳細を記載してください）
+- [ ] Bug fix (backward-compatible change that fixes existing functionality)
+- [ ] New feature (backward-compatible change that adds new functionality)
+- [ ] Breaking change (change that impacts existing functionality)
+- [ ] Documentation update
+- [ ] Code refactoring
+- [ ] Test addition or modification
+- [ ] Other (please describe in detail)
 
-## チェックリスト
+## Checklist
 
-<!-- 該当する項目に「x」を入れてください -->
+<!-- Please mark the completed items with an "x" -->
 
-- [ ] コードのフォーマットとスタイルが正しい（`go fmt`、`go vet`）
-- [ ] 全てのテストに合格する（`go test ./...`）
-- [ ] 必要に応じて新しいテストを追加した
-- [ ] ドキュメントを更新した
-- [ ] 変更をCHANGELOG.mdに記録した
+- [ ] Code formatting and style are correct (`go fmt`, `go vet`)
+- [ ] All tests pass (`go test ./...`)
+- [ ] Added new tests as needed
+- [ ] Documentation has been updated
+- [ ] Changes have been recorded in CHANGELOG.md
 
-## テスト手順
+## Testing Instructions
 
 <!-- 
-この変更をテストするための手順を説明してください。
-必要であれば、具体的なコマンドや構成例を含めてください。
+Please describe how to test this change.
+Include specific commands or configuration examples if necessary.
 -->
 
-## その他の情報
+## Additional Information
 
 <!-- 
-レビュアーが知っておくべき追加情報や懸念事項があれば記載してください。
-この変更に関する代替案や考慮された選択肢についても説明してください。
+Please provide any additional information or concerns that reviewers should know.
+You may also explain alternative approaches that were considered for this change.
 -->
