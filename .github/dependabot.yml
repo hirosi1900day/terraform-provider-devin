@@ -1,0 +1,35 @@
+version: 2
+updates:
+  # Go モジュールの依存関係を維持する
+  - package-ecosystem: "gomod"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 10
+    reviewers:
+      - "tokudomihiroshi"
+    labels:
+      - "dependencies"
+      - "go"
+
+  # Docker の依存関係を維持する
+  - package-ecosystem: "docker"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 5
+    reviewers:
+      - "tokudomihiroshi"
+    labels:
+      - "dependencies"
+      - "docker"
+
+  # GitHub Actions の依存関係を維持する
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 5
+    labels:
+      - "dependencies"
+      - "github-actions"
