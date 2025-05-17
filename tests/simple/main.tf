@@ -30,7 +30,7 @@ output "knowledge_name" {
   value = devin_knowledge.example.name
 }
 
-# 作成したナレッジの内容を出力
+# Output the content of the created knowledge
 output "knowledge_body" {
   value = devin_knowledge.example.body
 }
