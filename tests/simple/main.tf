@@ -35,7 +35,7 @@ output "knowledge_body" {
   value = devin_knowledge.example.body
 }
 
-# 作成したナレッジのトリガー説明を出力
+# Output the trigger description of the created knowledge
 output "knowledge_trigger_description" {
   value = devin_knowledge.example.trigger_description
 }
