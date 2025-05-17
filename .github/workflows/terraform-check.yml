@@ -1,0 +1,88 @@
+name: Terraform Plan Check
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - 'tests/**/*.tf'
+      - 'examples/**/*.tf'
+      - 'internal/**/*.go'
+      - 'go.mod'
+      - 'go.sum'
+  pull_request:
+    branches: [ main ]
+    paths:
+      - 'tests/**/*.tf'
+      - 'examples/**/*.tf'
+      - 'internal/**/*.go'
+      - 'go.mod'
+      - 'go.sum'
+
+jobs:
+  terraform-plan:
+    name: Terraform Plan
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        terraform-directories:
+          - tests/simple
+          - tests/import_block
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v2
+        with:
+          terraform_wrapper: false
+      
+      - name: Extract Go version
+        id: go-version
+        run: |
+          GO_VERSION=$(grep -E "^go [0-9]+\.[0-9]+(\.[0-9]+)?" go.mod | awk '{print $2}')
+          echo "version=$GO_VERSION" >> $GITHUB_OUTPUT
+      
+      - name: Setup Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: ${{ steps.go-version.outputs.version }}
+      
+      - name: Extract Provider Version
+        id: provider-version
+        run: |
+          PROVIDER_VERSION=$(grep -E 'version\s*=\s*"[0-9]+\.[0-9]+\.[0-9]+"' tests/simple/main.tf | head -n 1 | sed 's/.*version\s*=\s*"\([0-9]\+\.[0-9]\+\.[0-9]\+\)".*/\1/')
+          echo "version=$PROVIDER_VERSION" >> $GITHUB_OUTPUT
+          echo "Provider version: $PROVIDER_VERSION"
+      
+      - name: Build Provider
+        run: |
+          make build
+          mkdir -p ~/.terraform.d/plugins/registry.terraform.io/hirosi1900day/devin/${{ steps.provider-version.outputs.version }}/linux_amd64
+          cp terraform-provider-devin ~/.terraform.d/plugins/registry.terraform.io/hirosi1900day/devin/${{ steps.provider-version.outputs.version }}/linux_amd64/
+
+      - name: Terraform Init
+        working-directory: ${{ matrix.terraform-directories }}
+        run: terraform init
+      
+      - name: Terraform Validate
+        working-directory: ${{ matrix.terraform-directories }}
+        run: terraform validate
+
+      - name: Terraform Plan
+        working-directory: ${{ matrix.terraform-directories }}
+        run: |
+          terraform plan -no-color
+          if [ $? -ne 0 ]; then
+            echo "::error::Terraform plan failed in directory ${{ matrix.terraform-directories }}"
+            exit 1
+          fi
+        env:
+          DEVIN_API_KEY: test_api_key
+        
+      - name: Summary
+        if: ${{ always() }}
+        run: |
+          echo "### Terraform Plan Results" >> $GITHUB_STEP_SUMMARY
+          echo "- Directory: ${{ matrix.terraform-directories }}" >> $GITHUB_STEP_SUMMARY
+          echo "- Status: ${{ job.status }}" >> $GITHUB_STEP_SUMMARY
+          echo "See job logs for more details." >> $GITHUB_STEP_SUMMARY
