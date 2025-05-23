@@ -16,7 +16,7 @@ This data source retrieves folder resource information from the Devin API. It al
 
 ```terraform
 data "devin_folder" "example_by_id" {
-  id = "folder-57ab6747061948f2b775682e81fc3030"
+  id = "folder-abc"
 }
 
 output "folder_name" {
