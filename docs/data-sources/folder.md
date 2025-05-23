@@ -28,7 +28,7 @@ output "folder_name" {
 
 ```terraform
 data "devin_folder" "example_by_name" {
-  name = "taimee-terraform"
+  name = "example"
 }
 
 output "folder_id" {
