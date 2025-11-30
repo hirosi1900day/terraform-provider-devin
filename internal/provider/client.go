@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"sync"
 	"time"
 )
 
@@ -18,6 +19,13 @@ const (
 type DevinClient struct {
 	APIKey     string
 	HTTPClient *http.Client
+
+	// Cache for knowledge list to avoid rate limiting
+	knowledgeCache     *ListKnowledgeResponse
+	knowledgeCacheMu   sync.RWMutex
+	knowledgeCacheTime time.Time
+	// Cache TTL (default: 5 minutes for terraform plan duration)
+	CacheTTL time.Duration
 }
 
 // Knowledge represents a Devin knowledge resource
@@ -85,7 +93,24 @@ func NewClient(apiKey string) *DevinClient {
 		HTTPClient: &http.Client{
 			Timeout: 30 * time.Second,
 		},
+		CacheTTL: 5 * time.Minute, // Default cache TTL
 	}
+}
+
+// InvalidateCache clears the knowledge cache
+func (c *DevinClient) InvalidateCache() {
+	c.knowledgeCacheMu.Lock()
+	defer c.knowledgeCacheMu.Unlock()
+	c.knowledgeCache = nil
+	c.knowledgeCacheTime = time.Time{}
+}
+
+// isCacheValid checks if the cache is still valid
+func (c *DevinClient) isCacheValid() bool {
+	if c.knowledgeCache == nil {
+		return false
+	}
+	return time.Since(c.knowledgeCacheTime) < c.CacheTTL
 }
 
 // sendRequest is a common function for sending requests
@@ -132,10 +157,29 @@ func (c *DevinClient) sendRequest(method, path string, body interface{}) ([]byte
 }
 
 // ListKnowledge retrieves a list of knowledge resources
+// Results are cached to avoid rate limiting during terraform plan/apply
 func (c *DevinClient) ListKnowledge() (*ListKnowledgeResponse, error) {
 	// Return mock data for demo (development/testing)
 	if IsMockClient(c.APIKey) {
 		return GetMockKnowledgeList(), nil
+	}
+
+	// Check cache first
+	c.knowledgeCacheMu.RLock()
+	if c.isCacheValid() {
+		cached := c.knowledgeCache
+		c.knowledgeCacheMu.RUnlock()
+		return cached, nil
+	}
+	c.knowledgeCacheMu.RUnlock()
+
+	// Cache miss or expired, fetch from API
+	c.knowledgeCacheMu.Lock()
+	defer c.knowledgeCacheMu.Unlock()
+
+	// Double-check after acquiring write lock (another goroutine might have updated)
+	if c.isCacheValid() {
+		return c.knowledgeCache, nil
 	}
 
 	// Normal processing
@@ -148,6 +192,10 @@ func (c *DevinClient) ListKnowledge() (*ListKnowledgeResponse, error) {
 	if err := json.Unmarshal(respBody, &response); err != nil {
 		return nil, fmt.Errorf("failed to decode JSON response: %w", err)
 	}
+
+	// Update cache
+	c.knowledgeCache = &response
+	c.knowledgeCacheTime = time.Now()
 
 	return &response, nil
 }
@@ -211,6 +259,9 @@ func (c *DevinClient) CreateKnowledge(name, body string, triggerDescription stri
 		return nil, fmt.Errorf("failed to decode JSON response: %w", err)
 	}
 
+	// Invalidate cache after creating a new knowledge
+	c.InvalidateCache()
+
 	return &knowledge, nil
 }
 
@@ -240,6 +291,9 @@ func (c *DevinClient) UpdateKnowledge(id, name, body string, triggerDescription 
 		return nil, fmt.Errorf("failed to decode JSON response: %w", err)
 	}
 
+	// Invalidate cache after updating knowledge
+	c.InvalidateCache()
+
 	return &knowledge, nil
 }
 
@@ -253,7 +307,14 @@ func (c *DevinClient) DeleteKnowledge(id string) error {
 	// Normal processing
 	path := fmt.Sprintf("/knowledge/%s", id)
 	_, err := c.sendRequest("DELETE", path, nil)
-	return err
+	if err != nil {
+		return err
+	}
+
+	// Invalidate cache after deleting knowledge
+	c.InvalidateCache()
+
+	return nil
 }
 
 // GetFolderByID retrieves a folder resource by ID
