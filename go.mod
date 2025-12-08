@@ -3,7 +3,7 @@ module github.com/hirosi1900day/terraform-provider-devin-knowledge
 go 1.24.3
 
 require (
-	github.com/hashicorp/terraform-plugin-framework v1.16.1
+	github.com/hashicorp/terraform-plugin-framework v1.17.0
 	github.com/hashicorp/terraform-plugin-log v0.10.0
 )
 
