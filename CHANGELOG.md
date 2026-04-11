@@ -5,6 +5,36 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.0] - 2026-04-11
+
+### Breaking Changes
+- **Provider**: `org_id` パラメータが必須に。環境変数 `DEVIN_ORG_ID` でも設定可能
+- **Provider**: API Key が `cog_*` (Service User credential) 形式に変更
+- **Provider**: Base URL が `https://api.devin.ai/v3/organizations/{org_id}` に変更
+- **devin_knowledge**: `trigger_description` → `trigger` にリネーム
+- **devin_knowledge**: `parent_folder_id` → `folder_id` にリネーム
+- **devin_knowledge**: `id` の値が `note-xxxx` 形式に変更
+- **devin_knowledge**: `created_at` の型が ISO 8601 文字列 → UNIX timestamp (float64) に変更
+- **data.devin_folder**: `description` 属性が廃止
+- **data.devin_folder**: `id` の値が `folder-xxxx` 形式に変更
+
+### Added
+- Devin API v3 対応
+- `devin_knowledge`: `is_enabled`, `pinned_repo`, `folder_path`, `macro`, `access_type`, `updated_at` 属性を追加
+- `data.devin_folder`: `path`, `note_count`, `parent_folder_id` 属性を追加
+- 新リソース `devin_playbook`: Playbook の CRUD 管理
+- 新リソース `devin_secret`: Secret の作成・削除管理（Update 非対応、ForceNew）
+- 新リソース `devin_schedule`: Schedule の CRUD 管理（更新は PATCH）
+- Knowledge の個別取得 API 対応（`GET /knowledge/notes/{note_id}`）
+- カーソルベースページネーション対応
+
+### Removed
+- API v1 のサポート
+- Knowledge 一覧のキャッシュ機構（v3 では個別取得 API により不要）
+
+### Migration
+- [UPGRADE_GUIDE.md](UPGRADE_GUIDE.md) を参照してください
+
 ## [0.0.7] - 2025-11-30
 
 ### Added

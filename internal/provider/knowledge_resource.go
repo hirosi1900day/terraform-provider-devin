@@ -7,6 +7,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/booldefault"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/types"
@@ -20,11 +21,18 @@ type KnowledgeResource struct {
 
 // KnowledgeResourceModel represents the schema structure for the Terraform resource
 type KnowledgeResourceModel struct {
-	ID                 types.String `tfsdk:"id"`
-	Name               types.String `tfsdk:"name"`
-	Body               types.String `tfsdk:"body"`
-	TriggerDescription types.String `tfsdk:"trigger_description"`
-	ParentFolderID     types.String `tfsdk:"parent_folder_id"`
+	ID         types.String  `tfsdk:"id"`
+	Name       types.String  `tfsdk:"name"`
+	Body       types.String  `tfsdk:"body"`
+	Trigger    types.String  `tfsdk:"trigger"`
+	FolderID   types.String  `tfsdk:"folder_id"`
+	FolderPath types.String  `tfsdk:"folder_path"`
+	PinnedRepo types.String  `tfsdk:"pinned_repo"`
+	IsEnabled  types.Bool    `tfsdk:"is_enabled"`
+	Macro      types.String  `tfsdk:"macro"`
+	AccessType types.String  `tfsdk:"access_type"`
+	CreatedAt  types.Float64 `tfsdk:"created_at"`
+	UpdatedAt  types.Float64 `tfsdk:"updated_at"`
 }
 
 // NewKnowledgeResource creates an instance of the knowledge resource
@@ -40,10 +48,10 @@ func (r *KnowledgeResource) Metadata(_ context.Context, req resource.MetadataReq
 // Schema defines the resource schema
 func (r *KnowledgeResource) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		Description: "Manages knowledge resources in the Devin API",
+		Description: "Manages knowledge note resources in Devin API v3",
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
-				Description: "The ID of the knowledge resource",
+				Description: "The note_id of the knowledge resource",
 				Computed:    true,
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.UseStateForUnknown(),
@@ -57,13 +65,43 @@ func (r *KnowledgeResource) Schema(_ context.Context, _ resource.SchemaRequest, 
 				Description: "The content of the knowledge resource",
 				Required:    true,
 			},
-			"trigger_description": schema.StringAttribute{
+			"trigger": schema.StringAttribute{
 				Description: "The trigger description for the knowledge resource",
 				Required:    true,
 			},
-			"parent_folder_id": schema.StringAttribute{
+			"folder_id": schema.StringAttribute{
 				Description: "The ID of the parent folder",
 				Optional:    true,
+			},
+			"pinned_repo": schema.StringAttribute{
+				Description: "Pinned repository (owner/repo format)",
+				Optional:    true,
+			},
+			"is_enabled": schema.BoolAttribute{
+				Description: "Whether the knowledge is enabled",
+				Optional:    true,
+				Computed:    true,
+				Default:     booldefault.StaticBool(true),
+			},
+			"folder_path": schema.StringAttribute{
+				Description: "The folder path (read-only)",
+				Computed:    true,
+			},
+			"macro": schema.StringAttribute{
+				Description: "The macro identifier (read-only)",
+				Computed:    true,
+			},
+			"access_type": schema.StringAttribute{
+				Description: "Access type: enterprise or org (read-only)",
+				Computed:    true,
+			},
+			"created_at": schema.Float64Attribute{
+				Description: "Creation timestamp (UNIX)",
+				Computed:    true,
+			},
+			"updated_at": schema.Float64Attribute{
+				Description: "Last update timestamp (UNIX)",
+				Computed:    true,
 			},
 		},
 	}
@@ -79,7 +117,7 @@ func (r *KnowledgeResource) Configure(_ context.Context, req resource.ConfigureR
 	if !ok {
 		resp.Diagnostics.AddError(
 			"Unexpected resource configure type",
-			fmt.Sprintf("Expected *DevinClient, got: %T. Please report this issue to the provider developers.", req.ProviderData),
+			fmt.Sprintf("Expected *DevinClient, got: %T.", req.ProviderData),
 		)
 		return
 	}
@@ -98,13 +136,27 @@ func (r *KnowledgeResource) Create(ctx context.Context, req resource.CreateReque
 
 	tflog.Info(ctx, "Starting knowledge resource creation")
 
-	// Create knowledge
-	knowledge, err := r.client.CreateKnowledge(
-		plan.Name.ValueString(),
-		plan.Body.ValueString(),
-		plan.TriggerDescription.ValueString(),
-		plan.ParentFolderID.ValueString(),
-	)
+	reqBody := CreateKnowledgeNoteRequest{
+		Name:    plan.Name.ValueString(),
+		Body:    plan.Body.ValueString(),
+		Trigger: plan.Trigger.ValueString(),
+	}
+
+	if !plan.FolderID.IsNull() && !plan.FolderID.IsUnknown() {
+		reqBody.FolderID = plan.FolderID.ValueString()
+	}
+
+	if !plan.PinnedRepo.IsNull() && !plan.PinnedRepo.IsUnknown() {
+		v := plan.PinnedRepo.ValueString()
+		reqBody.PinnedRepo = &v
+	}
+
+	if !plan.IsEnabled.IsNull() && !plan.IsEnabled.IsUnknown() {
+		v := plan.IsEnabled.ValueBool()
+		reqBody.IsEnabled = &v
+	}
+
+	note, err := r.client.CreateKnowledgeNote(reqBody)
 	if err != nil {
 		resp.Diagnostics.AddError(
 			"Failed to create knowledge",
@@ -113,18 +165,13 @@ func (r *KnowledgeResource) Create(ctx context.Context, req resource.CreateReque
 		return
 	}
 
-	// Update model
-	plan.ID = types.StringValue(knowledge.ID)
+	mapKnowledgeNoteToModel(note, &plan)
 
-	// Save state
 	diags = resp.State.Set(ctx, plan)
 	resp.Diagnostics.Append(diags...)
-	if resp.Diagnostics.HasError() {
-		return
-	}
 
 	tflog.Info(ctx, "Knowledge resource creation completed", map[string]interface{}{
-		"id": knowledge.ID,
+		"id": note.NoteID,
 	})
 }
 
@@ -141,8 +188,7 @@ func (r *KnowledgeResource) Read(ctx context.Context, req resource.ReadRequest, 
 		"id": state.ID.ValueString(),
 	})
 
-	// Get knowledge
-	knowledge, err := r.client.GetKnowledge(state.ID.ValueString())
+	note, err := r.client.GetKnowledgeNote(state.ID.ValueString())
 	if err != nil {
 		resp.Diagnostics.AddError(
 			"Failed to retrieve knowledge",
@@ -151,25 +197,10 @@ func (r *KnowledgeResource) Read(ctx context.Context, req resource.ReadRequest, 
 		return
 	}
 
-	// Update model
-	state.Name = types.StringValue(knowledge.Name)
-	state.Body = types.StringValue(knowledge.Body)
-	state.TriggerDescription = types.StringValue(knowledge.TriggerDescription)
+	mapKnowledgeNoteToModel(note, &state)
 
-	// Update ParentFolderID only if not null
-	if knowledge.ParentFolderID != "" {
-		state.ParentFolderID = types.StringValue(knowledge.ParentFolderID)
-	} else if !state.ParentFolderID.IsNull() {
-		// If API returns empty string but current state has a value, update to empty string
-		state.ParentFolderID = types.StringValue("")
-	}
-
-	// Save state
 	diags = resp.State.Set(ctx, state)
 	resp.Diagnostics.Append(diags...)
-	if resp.Diagnostics.HasError() {
-		return
-	}
 
 	tflog.Info(ctx, "Knowledge resource information retrieval completed")
 }
@@ -194,17 +225,27 @@ func (r *KnowledgeResource) Update(ctx context.Context, req resource.UpdateReque
 		"id": state.ID.ValueString(),
 	})
 
-	// Maintain existing ID
-	plan.ID = state.ID
+	reqBody := UpdateKnowledgeNoteRequest{
+		Name:    plan.Name.ValueString(),
+		Body:    plan.Body.ValueString(),
+		Trigger: plan.Trigger.ValueString(),
+	}
 
-	// Update knowledge
-	_, err := r.client.UpdateKnowledge(
-		state.ID.ValueString(),
-		plan.Name.ValueString(),
-		plan.Body.ValueString(),
-		plan.TriggerDescription.ValueString(),
-		plan.ParentFolderID.ValueString(),
-	)
+	if !plan.FolderID.IsNull() && !plan.FolderID.IsUnknown() {
+		reqBody.FolderID = plan.FolderID.ValueString()
+	}
+
+	if !plan.PinnedRepo.IsNull() && !plan.PinnedRepo.IsUnknown() {
+		v := plan.PinnedRepo.ValueString()
+		reqBody.PinnedRepo = &v
+	}
+
+	if !plan.IsEnabled.IsNull() && !plan.IsEnabled.IsUnknown() {
+		v := plan.IsEnabled.ValueBool()
+		reqBody.IsEnabled = &v
+	}
+
+	note, err := r.client.UpdateKnowledgeNote(state.ID.ValueString(), reqBody)
 	if err != nil {
 		resp.Diagnostics.AddError(
 			"Failed to update knowledge",
@@ -213,12 +254,10 @@ func (r *KnowledgeResource) Update(ctx context.Context, req resource.UpdateReque
 		return
 	}
 
-	// Save state
+	mapKnowledgeNoteToModel(note, &plan)
+
 	diags = resp.State.Set(ctx, plan)
 	resp.Diagnostics.Append(diags...)
-	if resp.Diagnostics.HasError() {
-		return
-	}
 
 	tflog.Info(ctx, "Knowledge resource update completed")
 }
@@ -236,8 +275,7 @@ func (r *KnowledgeResource) Delete(ctx context.Context, req resource.DeleteReque
 		"id": state.ID.ValueString(),
 	})
 
-	// Delete knowledge
-	err := r.client.DeleteKnowledge(state.ID.ValueString())
+	err := r.client.DeleteKnowledgeNote(state.ID.ValueString())
 	if err != nil {
 		resp.Diagnostics.AddError(
 			"Failed to delete knowledge",
@@ -255,10 +293,33 @@ func (r *KnowledgeResource) ImportState(ctx context.Context, req resource.Import
 		"id": req.ID,
 	})
 
-	// Set import ID as knowledge ID
-	// Set knowledge ID to id attribute in state
-	diags := resp.State.SetAttribute(ctx, path.Root("id"), req.ID)
-	resp.Diagnostics.Append(diags...)
+	resource.ImportStatePassthroughID(ctx, path.Root("id"), req, resp)
 
 	tflog.Info(ctx, "Knowledge resource import completed")
+}
+
+// mapKnowledgeNoteToModel maps a KnowledgeNote API response to the Terraform model
+func mapKnowledgeNoteToModel(note *KnowledgeNote, model *KnowledgeResourceModel) {
+	model.ID = types.StringValue(note.NoteID)
+	model.Name = types.StringValue(note.Name)
+	model.Body = types.StringValue(note.Body)
+	model.Trigger = types.StringValue(note.Trigger)
+	model.IsEnabled = types.BoolValue(note.IsEnabled)
+	model.FolderPath = types.StringValue(note.FolderPath)
+	model.Macro = types.StringValue(note.Macro)
+	model.AccessType = types.StringValue(note.AccessType)
+	model.CreatedAt = types.Float64Value(note.CreatedAt)
+	model.UpdatedAt = types.Float64Value(note.UpdatedAt)
+
+	if note.FolderID != "" {
+		model.FolderID = types.StringValue(note.FolderID)
+	} else {
+		model.FolderID = types.StringNull()
+	}
+
+	if note.PinnedRepo != nil {
+		model.PinnedRepo = types.StringValue(*note.PinnedRepo)
+	} else {
+		model.PinnedRepo = types.StringNull()
+	}
 }

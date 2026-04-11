@@ -5,142 +5,273 @@ import (
 )
 
 func TestNewClient(t *testing.T) {
-	client := NewClient("test-api-key")
+	client := NewClient("test-api-key", "org-test")
 	if client == nil {
 		t.Fatalf("NewClient() returned nil")
 	}
 	if client.APIKey != "test-api-key" {
 		t.Errorf("NewClient() API key = %s, want %s", client.APIKey, "test-api-key")
 	}
+	if client.OrgID != "org-test" {
+		t.Errorf("NewClient() OrgID = %s, want %s", client.OrgID, "org-test")
+	}
 	if client.HTTPClient == nil {
 		t.Errorf("NewClient() HTTPClient is nil")
 	}
 }
 
-func TestListKnowledge_Mock(t *testing.T) {
-	client := NewClient("test_api_key")
-	response, err := client.ListKnowledge()
-	if err != nil {
-		t.Fatalf("ListKnowledge() error = %v", err)
-	}
-
-	if len(response.Knowledge) != 2 {
-		t.Errorf("ListKnowledge() returned %d items, want 2", len(response.Knowledge))
-	}
-
-	if len(response.Folders) != 2 {
-		t.Errorf("ListKnowledge() returned %d folders, want 2", len(response.Folders))
-	}
-
-	// 最初のナレッジの検証
-	if response.Knowledge[0].ID != "mock-knowledge-1" {
-		t.Errorf("First knowledge ID = %s, want %s", response.Knowledge[0].ID, "mock-knowledge-1")
-	}
-	if response.Knowledge[0].Name != "モックナレッジ1" {
-		t.Errorf("First knowledge Name = %s, want %s", response.Knowledge[0].Name, "モックナレッジ1")
-	}
-
-	// 2番目のナレッジの検証
-	if response.Knowledge[1].ID != "mock-knowledge-2" {
-		t.Errorf("Second knowledge ID = %s, want %s", response.Knowledge[1].ID, "mock-knowledge-2")
-	}
-	if response.Knowledge[1].Name != "モックナレッジ2" {
-		t.Errorf("Second knowledge Name = %s, want %s", response.Knowledge[1].Name, "モックナレッジ2")
-	}
-
-	// フォルダーの検証
-	if response.Folders[0].ID != "mock-folder-1" {
-		t.Errorf("First folder ID = %s, want %s", response.Folders[0].ID, "mock-folder-1")
-	}
-	if response.Folders[0].Name != "モックフォルダ1" {
-		t.Errorf("First folder Name = %s, want %s", response.Folders[0].Name, "モックフォルダ1")
+func TestBaseURL(t *testing.T) {
+	client := NewClient("test-api-key", "org-123")
+	expected := "https://api.devin.ai/v3/organizations/org-123"
+	if client.baseURL() != expected {
+		t.Errorf("baseURL() = %s, want %s", client.baseURL(), expected)
 	}
 }
 
-func TestGetKnowledge_Mock(t *testing.T) {
-	client := NewClient("test_api_key")
-
-	// 既存のIDの取得テスト
-	knowledge, err := client.GetKnowledge("mock-knowledge-1")
+func TestListKnowledgeNotes_Mock(t *testing.T) {
+	client := NewClient("test_api_key", "org-mock")
+	notes, err := client.ListKnowledgeNotes()
 	if err != nil {
-		t.Fatalf("GetKnowledge() error = %v", err)
+		t.Fatalf("ListKnowledgeNotes() error = %v", err)
 	}
 
-	if knowledge.ID != "mock-knowledge-1" {
-		t.Errorf("GetKnowledge() ID = %s, want %s", knowledge.ID, "mock-knowledge-1")
-	}
-	if knowledge.Name != "モックナレッジ1" {
-		t.Errorf("GetKnowledge() Name = %s, want %s", knowledge.Name, "モックナレッジ1")
-	}
-	if knowledge.Body != "これはテスト用のモックナレッジです" {
-		t.Errorf("GetKnowledge() Body = %s, want %s", knowledge.Body, "これはテスト用のモックナレッジです")
-	}
-	if knowledge.TriggerDescription != "テスト用トリガーの説明" {
-		t.Errorf("GetKnowledge() TriggerDescription = %s, want %s", knowledge.TriggerDescription, "テスト用トリガーの説明")
-	}
-	if knowledge.ParentFolderID != "mock-folder-1" {
-		t.Errorf("GetKnowledge() ParentFolderID = %s, want %s", knowledge.ParentFolderID, "mock-folder-1")
+	if len(notes) != 2 {
+		t.Errorf("ListKnowledgeNotes() returned %d items, want 2", len(notes))
 	}
 
-	// 存在しないIDのテスト
-	_, err = client.GetKnowledge("non-existent-id")
+	if notes[0].NoteID != "note-mock-1" {
+		t.Errorf("First note ID = %s, want %s", notes[0].NoteID, "note-mock-1")
+	}
+	if notes[0].Name != "モックナレッジ1" {
+		t.Errorf("First note Name = %s, want %s", notes[0].Name, "モックナレッジ1")
+	}
+}
+
+func TestGetKnowledgeNote_Mock(t *testing.T) {
+	client := NewClient("test_api_key", "org-mock")
+
+	note, err := client.GetKnowledgeNote("note-mock-1")
+	if err != nil {
+		t.Fatalf("GetKnowledgeNote() error = %v", err)
+	}
+
+	if note.NoteID != "note-mock-1" {
+		t.Errorf("GetKnowledgeNote() NoteID = %s, want %s", note.NoteID, "note-mock-1")
+	}
+	if note.Name != "モックナレッジ1" {
+		t.Errorf("GetKnowledgeNote() Name = %s, want %s", note.Name, "モックナレッジ1")
+	}
+	if note.Trigger != "テスト用トリガーの説明" {
+		t.Errorf("GetKnowledgeNote() Trigger = %s, want %s", note.Trigger, "テスト用トリガーの説明")
+	}
+	if note.FolderID != "folder-mock-1" {
+		t.Errorf("GetKnowledgeNote() FolderID = %s, want %s", note.FolderID, "folder-mock-1")
+	}
+	if !note.IsEnabled {
+		t.Errorf("GetKnowledgeNote() IsEnabled = false, want true")
+	}
+
+	// Non-existent ID test
+	_, err = client.GetKnowledgeNote("non-existent-id")
 	if err == nil {
-		t.Errorf("GetKnowledge() with non-existent ID should return error")
+		t.Errorf("GetKnowledgeNote() with non-existent ID should return error")
 	}
 }
 
-func TestCreateKnowledge_Mock(t *testing.T) {
-	client := NewClient("test_api_key")
-	knowledge, err := client.CreateKnowledge("テストナレッジ", "テスト内容", "テストトリガー", "test-folder-id")
+func TestCreateKnowledgeNote_Mock(t *testing.T) {
+	client := NewClient("test_api_key", "org-mock")
+	isEnabled := true
+	reqBody := CreateKnowledgeNoteRequest{
+		Name:      "テストナレッジ",
+		Body:      "テスト内容",
+		Trigger:   "テストトリガー",
+		FolderID:  "test-folder-id",
+		IsEnabled: &isEnabled,
+	}
+	note, err := client.CreateKnowledgeNote(reqBody)
 	if err != nil {
-		t.Fatalf("CreateKnowledge() error = %v", err)
+		t.Fatalf("CreateKnowledgeNote() error = %v", err)
 	}
 
-	if knowledge.ID != "new-mock-knowledge" {
-		t.Errorf("CreateKnowledge() ID = %s, want %s", knowledge.ID, "new-mock-knowledge")
+	if note.NoteID != "note-new-mock" {
+		t.Errorf("CreateKnowledgeNote() NoteID = %s, want %s", note.NoteID, "note-new-mock")
 	}
-	if knowledge.Name != "テストナレッジ" {
-		t.Errorf("CreateKnowledge() Name = %s, want %s", knowledge.Name, "テストナレッジ")
+	if note.Name != "テストナレッジ" {
+		t.Errorf("CreateKnowledgeNote() Name = %s, want %s", note.Name, "テストナレッジ")
 	}
-	if knowledge.Body != "テスト内容" {
-		t.Errorf("CreateKnowledge() Body = %s, want %s", knowledge.Body, "テスト内容")
-	}
-	if knowledge.TriggerDescription != "テストトリガー" {
-		t.Errorf("CreateKnowledge() TriggerDescription = %s, want %s", knowledge.TriggerDescription, "テストトリガー")
-	}
-	if knowledge.ParentFolderID != "test-folder-id" {
-		t.Errorf("CreateKnowledge() ParentFolderID = %s, want %s", knowledge.ParentFolderID, "test-folder-id")
+	if note.Trigger != "テストトリガー" {
+		t.Errorf("CreateKnowledgeNote() Trigger = %s, want %s", note.Trigger, "テストトリガー")
 	}
 }
 
-func TestUpdateKnowledge_Mock(t *testing.T) {
-	client := NewClient("test_api_key")
-	knowledge, err := client.UpdateKnowledge("mock-knowledge-1", "更新ナレッジ", "更新内容", "更新トリガー", "updated-folder-id")
+func TestUpdateKnowledgeNote_Mock(t *testing.T) {
+	client := NewClient("test_api_key", "org-mock")
+	isEnabled := true
+	reqBody := UpdateKnowledgeNoteRequest{
+		Name:      "更新ナレッジ",
+		Body:      "更新内容",
+		Trigger:   "更新トリガー",
+		FolderID:  "updated-folder-id",
+		IsEnabled: &isEnabled,
+	}
+	note, err := client.UpdateKnowledgeNote("note-mock-1", reqBody)
 	if err != nil {
-		t.Fatalf("UpdateKnowledge() error = %v", err)
+		t.Fatalf("UpdateKnowledgeNote() error = %v", err)
 	}
 
-	if knowledge.ID != "mock-knowledge-1" {
-		t.Errorf("UpdateKnowledge() ID = %s, want %s", knowledge.ID, "mock-knowledge-1")
+	if note.NoteID != "note-mock-1" {
+		t.Errorf("UpdateKnowledgeNote() NoteID = %s, want %s", note.NoteID, "note-mock-1")
 	}
-	if knowledge.Name != "更新ナレッジ" {
-		t.Errorf("UpdateKnowledge() Name = %s, want %s", knowledge.Name, "更新ナレッジ")
-	}
-	if knowledge.Body != "更新内容" {
-		t.Errorf("UpdateKnowledge() Body = %s, want %s", knowledge.Body, "更新内容")
-	}
-	if knowledge.TriggerDescription != "更新トリガー" {
-		t.Errorf("UpdateKnowledge() TriggerDescription = %s, want %s", knowledge.TriggerDescription, "更新トリガー")
-	}
-	if knowledge.ParentFolderID != "updated-folder-id" {
-		t.Errorf("UpdateKnowledge() ParentFolderID = %s, want %s", knowledge.ParentFolderID, "updated-folder-id")
+	if note.Name != "更新ナレッジ" {
+		t.Errorf("UpdateKnowledgeNote() Name = %s, want %s", note.Name, "更新ナレッジ")
 	}
 }
 
-func TestDeleteKnowledge_Mock(t *testing.T) {
-	client := NewClient("test_api_key")
-	err := client.DeleteKnowledge("mock-knowledge-1")
+func TestDeleteKnowledgeNote_Mock(t *testing.T) {
+	client := NewClient("test_api_key", "org-mock")
+	err := client.DeleteKnowledgeNote("note-mock-1")
 	if err != nil {
-		t.Errorf("DeleteKnowledge() error = %v", err)
+		t.Errorf("DeleteKnowledgeNote() error = %v", err)
+	}
+}
+
+func TestGetFolderByID_Mock(t *testing.T) {
+	client := NewClient("test_api_key", "org-mock")
+	folder, err := client.GetFolderByID("folder-mock-1")
+	if err != nil {
+		t.Fatalf("GetFolderByID() error = %v", err)
+	}
+
+	if folder.FolderID != "folder-mock-1" {
+		t.Errorf("GetFolderByID() FolderID = %s, want %s", folder.FolderID, "folder-mock-1")
+	}
+	if folder.Name != "モックフォルダ1" {
+		t.Errorf("GetFolderByID() Name = %s, want %s", folder.Name, "モックフォルダ1")
+	}
+}
+
+func TestGetFolderByName_Mock(t *testing.T) {
+	client := NewClient("test_api_key", "org-mock")
+	folder, err := client.GetFolderByName("モックフォルダ1")
+	if err != nil {
+		t.Fatalf("GetFolderByName() error = %v", err)
+	}
+
+	if folder.FolderID != "folder-mock-1" {
+		t.Errorf("GetFolderByName() FolderID = %s, want %s", folder.FolderID, "folder-mock-1")
+	}
+}
+
+func TestGetPlaybook_Mock(t *testing.T) {
+	client := NewClient("test_api_key", "org-mock")
+	playbook, err := client.GetPlaybook("playbook-mock-1")
+	if err != nil {
+		t.Fatalf("GetPlaybook() error = %v", err)
+	}
+
+	if playbook.PlaybookID != "playbook-mock-1" {
+		t.Errorf("GetPlaybook() PlaybookID = %s, want %s", playbook.PlaybookID, "playbook-mock-1")
+	}
+	if playbook.Title != "モックPlaybook" {
+		t.Errorf("GetPlaybook() Title = %s, want %s", playbook.Title, "モックPlaybook")
+	}
+	if playbook.Status != "active" {
+		t.Errorf("GetPlaybook() Status = %s, want %s", playbook.Status, "active")
+	}
+}
+
+func TestCreatePlaybook_Mock(t *testing.T) {
+	client := NewClient("test_api_key", "org-mock")
+	reqBody := CreatePlaybookRequest{
+		Title: "新しいPlaybook",
+		Body:  "Playbookの内容",
+	}
+	playbook, err := client.CreatePlaybook(reqBody)
+	if err != nil {
+		t.Fatalf("CreatePlaybook() error = %v", err)
+	}
+
+	if playbook.PlaybookID != "playbook-new-mock" {
+		t.Errorf("CreatePlaybook() PlaybookID = %s, want %s", playbook.PlaybookID, "playbook-new-mock")
+	}
+	if playbook.Title != "新しいPlaybook" {
+		t.Errorf("CreatePlaybook() Title = %s, want %s", playbook.Title, "新しいPlaybook")
+	}
+}
+
+func TestDeletePlaybook_Mock(t *testing.T) {
+	client := NewClient("test_api_key", "org-mock")
+	err := client.DeletePlaybook("playbook-mock-1")
+	if err != nil {
+		t.Errorf("DeletePlaybook() error = %v", err)
+	}
+}
+
+func TestCreateSecret_Mock(t *testing.T) {
+	client := NewClient("test_api_key", "org-mock")
+	reqBody := CreateSecretRequest{
+		Name:  "TEST_SECRET",
+		Value: "secret-value",
+	}
+	secret, err := client.CreateSecret(reqBody)
+	if err != nil {
+		t.Fatalf("CreateSecret() error = %v", err)
+	}
+
+	if secret.SecretID != "secret-new-mock" {
+		t.Errorf("CreateSecret() SecretID = %s, want %s", secret.SecretID, "secret-new-mock")
+	}
+	if secret.Name != "TEST_SECRET" {
+		t.Errorf("CreateSecret() Name = %s, want %s", secret.Name, "TEST_SECRET")
+	}
+}
+
+func TestDeleteSecret_Mock(t *testing.T) {
+	client := NewClient("test_api_key", "org-mock")
+	err := client.DeleteSecret("secret-mock-1")
+	if err != nil {
+		t.Errorf("DeleteSecret() error = %v", err)
+	}
+}
+
+func TestGetSchedule_Mock(t *testing.T) {
+	client := NewClient("test_api_key", "org-mock")
+	schedule, err := client.GetSchedule("schedule-mock-1")
+	if err != nil {
+		t.Fatalf("GetSchedule() error = %v", err)
+	}
+
+	if schedule.ScheduleID != "schedule-mock-1" {
+		t.Errorf("GetSchedule() ScheduleID = %s, want %s", schedule.ScheduleID, "schedule-mock-1")
+	}
+	if schedule.Cron != "0 9 * * 1" {
+		t.Errorf("GetSchedule() Cron = %s, want %s", schedule.Cron, "0 9 * * 1")
+	}
+}
+
+func TestCreateSchedule_Mock(t *testing.T) {
+	client := NewClient("test_api_key", "org-mock")
+	reqBody := CreateScheduleRequest{
+		Prompt: "テストプロンプト",
+		Cron:   "0 9 * * 1",
+	}
+	schedule, err := client.CreateSchedule(reqBody)
+	if err != nil {
+		t.Fatalf("CreateSchedule() error = %v", err)
+	}
+
+	if schedule.ScheduleID != "schedule-new-mock" {
+		t.Errorf("CreateSchedule() ScheduleID = %s, want %s", schedule.ScheduleID, "schedule-new-mock")
+	}
+	if schedule.Prompt != "テストプロンプト" {
+		t.Errorf("CreateSchedule() Prompt = %s, want %s", schedule.Prompt, "テストプロンプト")
+	}
+}
+
+func TestDeleteSchedule_Mock(t *testing.T) {
+	client := NewClient("test_api_key", "org-mock")
+	err := client.DeleteSchedule("schedule-mock-1")
+	if err != nil {
+		t.Errorf("DeleteSchedule() error = %v", err)
 	}
 }

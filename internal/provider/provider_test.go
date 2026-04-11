@@ -25,27 +25,37 @@ func TestProviderSchema(t *testing.T) {
 	if apiKeyAttr == nil {
 		t.Fatal("Schema doesn't have api_key attribute")
 	}
+
+	// Check if org_id attribute exists
+	orgIDAttr := resp.Schema.Attributes["org_id"]
+	if orgIDAttr == nil {
+		t.Fatal("Schema doesn't have org_id attribute")
+	}
 }
 
 func TestProviderConfigure(t *testing.T) {
-	// In testing, we don't want to depend on the implementation of provider.Configure
-	// Actual provider functionality should be covered in integration tests
 	t.Skip("Skipping detailed test for provider.Configure")
 }
 
 func TestProviderAPI(t *testing.T) {
-	// Test behavior when API_KEY is set in environment variables
 	oldAPIKey := os.Getenv("DEVIN_API_KEY")
+	oldOrgID := os.Getenv("DEVIN_ORG_ID")
 	os.Setenv("DEVIN_API_KEY", "test_api_key")
-	defer os.Setenv("DEVIN_API_KEY", oldAPIKey) // Restore original value after test
+	os.Setenv("DEVIN_ORG_ID", "org-test")
+	defer func() {
+		os.Setenv("DEVIN_API_KEY", oldAPIKey)
+		os.Setenv("DEVIN_ORG_ID", oldOrgID)
+	}()
 
-	// Verify that the client is created correctly
-	client := NewClient("test_api_key")
+	client := NewClient("test_api_key", "org-test")
 	if client == nil {
 		t.Fatalf("NewClient() returned nil")
 	}
 	if client.APIKey != "test_api_key" {
 		t.Errorf("NewClient() API key = %s, want %s", client.APIKey, "test_api_key")
+	}
+	if client.OrgID != "org-test" {
+		t.Errorf("NewClient() OrgID = %s, want %s", client.OrgID, "org-test")
 	}
 }
 
@@ -71,8 +81,8 @@ func TestProviderResources(t *testing.T) {
 	p := &DevinProvider{version: "test"}
 	resources := p.Resources(ctx)
 
-	if len(resources) != 1 {
-		t.Fatalf("Resources() returned %d resources, want 1", len(resources))
+	if len(resources) != 4 {
+		t.Fatalf("Resources() returned %d resources, want 4", len(resources))
 	}
 }
 

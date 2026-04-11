@@ -6,77 +6,199 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"strconv"
 	"sync"
 	"time"
 )
 
 const (
-	// Base URL for Devin API
-	baseURL = "https://api.devin.ai/v1"
+	// Base URL for Devin API v3
+	baseAPIURL = "https://api.devin.ai"
 )
 
-// DevinClient is a client for interacting with the Devin API
+// DevinClient is a client for interacting with the Devin API v3
 type DevinClient struct {
 	APIKey     string
+	OrgID      string
 	HTTPClient *http.Client
 
-	// Cache for knowledge list to avoid rate limiting
-	knowledgeCache     *ListKnowledgeResponse
+	// Rate limit retry settings
+	MaxRetries int
+
+	// Cache for knowledge notes to avoid rate limiting during plan/apply
+	knowledgeCache     map[string]*KnowledgeNote
 	knowledgeCacheMu   sync.RWMutex
 	knowledgeCacheTime time.Time
-	// Cache TTL (default: 5 minutes for terraform plan duration)
-	CacheTTL time.Duration
+	CacheTTL           time.Duration
 }
 
-// Knowledge represents a Devin knowledge resource
-type Knowledge struct {
-	ID                 string    `json:"id"`
-	Name               string    `json:"name"`
-	Body               string    `json:"body"`                       // Required
-	TriggerDescription string    `json:"trigger_description"`        // Required
-	ParentFolderID     string    `json:"parent_folder_id,omitempty"` // Optional
-	CreatedAt          time.Time `json:"created_at"`
+// baseURL returns the organization-scoped base URL
+func (c *DevinClient) baseURL() string {
+	return fmt.Sprintf("%s/v3/organizations/%s", baseAPIURL, c.OrgID)
 }
 
-// ListKnowledgeResponse represents the response from the knowledge list API
-type ListKnowledgeResponse struct {
-	Knowledge []KnowledgeItem `json:"knowledge"`
-	Folders   []FolderItem    `json:"folders"`
+// --- Knowledge types (v3) ---
+
+// KnowledgeNote represents a v3 knowledge note
+type KnowledgeNote struct {
+	NoteID     string  `json:"note_id"`
+	Name       string  `json:"name"`
+	Body       string  `json:"body"`
+	Trigger    string  `json:"trigger"`
+	FolderID   string  `json:"folder_id,omitempty"`
+	FolderPath string  `json:"folder_path,omitempty"`
+	IsEnabled  bool    `json:"is_enabled"`
+	PinnedRepo *string `json:"pinned_repo"`
+	Macro      string  `json:"macro,omitempty"`
+	AccessType string  `json:"access_type,omitempty"`
+	CreatedAt  float64 `json:"created_at"`
+	UpdatedAt  float64 `json:"updated_at"`
 }
 
-// KnowledgeItem represents a knowledge item
-type KnowledgeItem struct {
-	ID                 string    `json:"id"`
-	Name               string    `json:"name"`
-	Body               string    `json:"body"`                       // Required
-	TriggerDescription string    `json:"trigger_description"`        // Required
-	ParentFolderID     string    `json:"parent_folder_id,omitempty"` // Optional
-	CreatedAt          time.Time `json:"created_at"`
+// ListKnowledgeNotesResponse represents the paginated response from v3 knowledge notes API
+type ListKnowledgeNotesResponse struct {
+	Notes   []KnowledgeNote `json:"notes"`
+	HasMore bool            `json:"has_more"`
+	After   string          `json:"after,omitempty"`
 }
 
-// FolderItem represents a folder item
+// CreateKnowledgeNoteRequest represents the request for creating a knowledge note
+type CreateKnowledgeNoteRequest struct {
+	Name       string  `json:"name"`
+	Body       string  `json:"body"`
+	Trigger    string  `json:"trigger"`
+	FolderID   string  `json:"folder_id,omitempty"`
+	PinnedRepo *string `json:"pinned_repo,omitempty"`
+	IsEnabled  *bool   `json:"is_enabled,omitempty"`
+}
+
+// UpdateKnowledgeNoteRequest represents the request for updating a knowledge note
+type UpdateKnowledgeNoteRequest struct {
+	Name       string  `json:"name"`
+	Body       string  `json:"body"`
+	Trigger    string  `json:"trigger"`
+	FolderID   string  `json:"folder_id,omitempty"`
+	PinnedRepo *string `json:"pinned_repo,omitempty"`
+	IsEnabled  *bool   `json:"is_enabled,omitempty"`
+}
+
+// --- Folder types (v3) ---
+
+// FolderItem represents a v3 folder
 type FolderItem struct {
-	ID          string    `json:"id"`
-	Name        string    `json:"name"`
-	Description string    `json:"description,omitempty"`
-	CreatedAt   time.Time `json:"created_at"`
+	FolderID       string `json:"folder_id"`
+	Name           string `json:"name"`
+	Path           string `json:"path,omitempty"`
+	NoteCount      int    `json:"note_count"`
+	ParentFolderID string `json:"parent_folder_id,omitempty"`
 }
 
-// CreateKnowledgeRequest represents the request for knowledge creation API
-type CreateKnowledgeRequest struct {
-	Name               string `json:"name"`                       // Required
-	Body               string `json:"body"`                       // Required
-	ParentFolderID     string `json:"parent_folder_id,omitempty"` // Optional
-	TriggerDescription string `json:"trigger_description"`        // Required
+// ListFoldersResponse represents the response from v3 folders API
+type ListFoldersResponse struct {
+	Folders []FolderItem `json:"folders"`
+	HasMore bool         `json:"has_more"`
+	After   string       `json:"after,omitempty"`
 }
 
-// UpdateKnowledgeRequest represents the request for knowledge update API
-type UpdateKnowledgeRequest struct {
-	Name               string `json:"name"`                       // Required
-	Body               string `json:"body"`                       // Required
-	ParentFolderID     string `json:"parent_folder_id,omitempty"` // Optional
-	TriggerDescription string `json:"trigger_description"`        // Required
+// --- Playbook types (v3) ---
+
+// Playbook represents a v3 playbook
+type Playbook struct {
+	PlaybookID        string  `json:"playbook_id"`
+	Title             string  `json:"title"`
+	Body              string  `json:"body"`
+	Status            string  `json:"status"`
+	AccessType        string  `json:"access_type,omitempty"`
+	Macro             *string `json:"macro"`
+	OrgID             string  `json:"org_id,omitempty"`
+	CreatedAt         float64 `json:"created_at"`
+	UpdatedAt         float64 `json:"updated_at"`
+	CreatedByUserID   string  `json:"created_by_user_id,omitempty"`
+	CreatedByUserName string  `json:"created_by_user_name,omitempty"`
+	UpdatedByUserID   string  `json:"updated_by_user_id,omitempty"`
+	UpdatedByUserName string  `json:"updated_by_user_name,omitempty"`
 }
+
+// ListPlaybooksResponse represents the paginated response from playbooks API
+type ListPlaybooksResponse struct {
+	Playbooks []Playbook `json:"playbooks"`
+	HasMore   bool       `json:"has_more"`
+	After     string     `json:"after,omitempty"`
+}
+
+// CreatePlaybookRequest represents the request for creating a playbook
+type CreatePlaybookRequest struct {
+	Title  string `json:"title"`
+	Body   string `json:"body"`
+	Status string `json:"status,omitempty"`
+}
+
+// UpdatePlaybookRequest represents the request for updating a playbook
+type UpdatePlaybookRequest struct {
+	Title  string `json:"title"`
+	Body   string `json:"body"`
+	Status string `json:"status,omitempty"`
+}
+
+// --- Secret types (v3) ---
+
+// Secret represents a v3 secret (read response - value is never returned)
+type Secret struct {
+	SecretID  string  `json:"secret_id"`
+	Name      string  `json:"name"`
+	CreatedAt float64 `json:"created_at"`
+	UpdatedAt float64 `json:"updated_at"`
+}
+
+// ListSecretsResponse represents the response from secrets API
+type ListSecretsResponse struct {
+	Secrets []Secret `json:"secrets"`
+	HasMore bool     `json:"has_more"`
+	After   string   `json:"after,omitempty"`
+}
+
+// CreateSecretRequest represents the request for creating a secret
+type CreateSecretRequest struct {
+	Name  string `json:"name"`
+	Value string `json:"value"`
+}
+
+// --- Schedule types (v3) ---
+
+// Schedule represents a v3 schedule
+type Schedule struct {
+	ScheduleID string  `json:"schedule_id"`
+	Prompt     string  `json:"prompt"`
+	Cron       string  `json:"cron"`
+	PlaybookID string  `json:"playbook_id,omitempty"`
+	Status     string  `json:"status,omitempty"`
+	CreatedAt  float64 `json:"created_at"`
+	UpdatedAt  float64 `json:"updated_at"`
+}
+
+// ListSchedulesResponse represents the response from schedules API
+type ListSchedulesResponse struct {
+	Schedules []Schedule `json:"schedules"`
+	HasMore   bool       `json:"has_more"`
+	After     string     `json:"after,omitempty"`
+}
+
+// CreateScheduleRequest represents the request for creating a schedule
+type CreateScheduleRequest struct {
+	Prompt     string `json:"prompt"`
+	Cron       string `json:"cron"`
+	PlaybookID string `json:"playbook_id,omitempty"`
+}
+
+// UpdateScheduleRequest represents the request for updating a schedule (PATCH)
+type UpdateScheduleRequest struct {
+	Prompt     *string `json:"prompt,omitempty"`
+	Cron       *string `json:"cron,omitempty"`
+	PlaybookID *string `json:"playbook_id,omitempty"`
+	Status     *string `json:"status,omitempty"`
+}
+
+// --- Error type ---
 
 // ErrorResponse represents the API error response
 type ErrorResponse struct {
@@ -86,287 +208,581 @@ type ErrorResponse struct {
 	} `json:"error"`
 }
 
-// NewClient creates a new DevinClient
-func NewClient(apiKey string) *DevinClient {
+// NewClient creates a new DevinClient for v3 API
+func NewClient(apiKey, orgID string) *DevinClient {
 	return &DevinClient{
 		APIKey: apiKey,
+		OrgID:  orgID,
 		HTTPClient: &http.Client{
 			Timeout: 30 * time.Second,
 		},
-		CacheTTL: 5 * time.Minute, // Default cache TTL
+		MaxRetries: 5,
+		CacheTTL:   5 * time.Minute,
 	}
 }
 
-// InvalidateCache clears the knowledge cache
-func (c *DevinClient) InvalidateCache() {
+// InvalidateKnowledgeCache clears the knowledge notes cache
+func (c *DevinClient) InvalidateKnowledgeCache() {
 	c.knowledgeCacheMu.Lock()
 	defer c.knowledgeCacheMu.Unlock()
 	c.knowledgeCache = nil
 	c.knowledgeCacheTime = time.Time{}
 }
 
-// isCacheValid checks if the cache is still valid
-func (c *DevinClient) isCacheValid() bool {
+// isKnowledgeCacheValid checks if the knowledge cache is still valid
+func (c *DevinClient) isKnowledgeCacheValid() bool {
 	if c.knowledgeCache == nil {
 		return false
 	}
 	return time.Since(c.knowledgeCacheTime) < c.CacheTTL
 }
 
-// sendRequest is a common function for sending requests
-func (c *DevinClient) sendRequest(method, path string, body interface{}) ([]byte, error) {
-	url := baseURL + path
+// populateKnowledgeCache fetches all knowledge notes and caches them
+func (c *DevinClient) populateKnowledgeCache() error {
+	notes, err := c.ListKnowledgeNotes()
+	if err != nil {
+		return err
+	}
 
-	var reqBody io.Reader
+	cache := make(map[string]*KnowledgeNote, len(notes))
+	for i := range notes {
+		cache[notes[i].NoteID] = &notes[i]
+	}
+
+	c.knowledgeCache = cache
+	c.knowledgeCacheTime = time.Now()
+	return nil
+}
+
+// sendRequest is a common function for sending requests with rate limit retry
+func (c *DevinClient) sendRequest(method, path string, body interface{}) ([]byte, error) {
+	url := c.baseURL() + path
+
+	var jsonData []byte
 	if body != nil {
-		jsonData, err := json.Marshal(body)
+		var err error
+		jsonData, err = json.Marshal(body)
 		if err != nil {
 			return nil, fmt.Errorf("failed to JSON encode request body: %w", err)
 		}
-		reqBody = bytes.NewBuffer(jsonData)
 	}
 
-	req, err := http.NewRequest(method, url, reqBody)
-	if err != nil {
-		return nil, fmt.Errorf("failed to create HTTP request: %w", err)
-	}
-
-	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", c.APIKey))
-	req.Header.Set("Content-Type", "application/json")
-
-	resp, err := c.HTTPClient.Do(req)
-	if err != nil {
-		return nil, fmt.Errorf("failed to execute HTTP request: %w", err)
-	}
-	defer resp.Body.Close()
-
-	respBody, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return nil, fmt.Errorf("failed to read response body: %w", err)
-	}
-
-	if resp.StatusCode >= 400 {
-		var errResp ErrorResponse
-		if err := json.Unmarshal(respBody, &errResp); err == nil {
-			return nil, fmt.Errorf("API error: %s (%s)", errResp.Error.Message, errResp.Error.Type)
+	var lastErr error
+	for attempt := 0; attempt <= c.MaxRetries; attempt++ {
+		var reqBody io.Reader
+		if jsonData != nil {
+			reqBody = bytes.NewBuffer(jsonData)
 		}
-		return nil, fmt.Errorf("API error: status code %d", resp.StatusCode)
+
+		req, err := http.NewRequest(method, url, reqBody)
+		if err != nil {
+			return nil, fmt.Errorf("failed to create HTTP request: %w", err)
+		}
+
+		req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", c.APIKey))
+		req.Header.Set("Content-Type", "application/json")
+
+		resp, err := c.HTTPClient.Do(req)
+		if err != nil {
+			return nil, fmt.Errorf("failed to execute HTTP request: %w", err)
+		}
+
+		respBody, err := io.ReadAll(resp.Body)
+		resp.Body.Close()
+		if err != nil {
+			return nil, fmt.Errorf("failed to read response body: %w", err)
+		}
+
+		// Rate limit handling: retry with exponential backoff
+		if resp.StatusCode == 429 {
+			if attempt >= c.MaxRetries {
+				lastErr = fmt.Errorf("API rate limit exceeded after %d retries", c.MaxRetries)
+				break
+			}
+
+			// Use Retry-After header if available, otherwise exponential backoff
+			wait := time.Duration(1<<uint(attempt)) * time.Second
+			if retryAfter := resp.Header.Get("Retry-After"); retryAfter != "" {
+				if seconds, err := strconv.Atoi(retryAfter); err == nil {
+					wait = time.Duration(seconds) * time.Second
+				}
+			}
+
+			time.Sleep(wait)
+			continue
+		}
+
+		if resp.StatusCode >= 400 {
+			var errResp ErrorResponse
+			if err := json.Unmarshal(respBody, &errResp); err == nil && errResp.Error.Message != "" {
+				return nil, fmt.Errorf("API error (status %d): %s (%s)", resp.StatusCode, errResp.Error.Message, errResp.Error.Type)
+			}
+			return nil, fmt.Errorf("API error: status code %d, body: %s", resp.StatusCode, string(respBody))
+		}
+
+		return respBody, nil
 	}
 
-	return respBody, nil
+	return nil, lastErr
 }
 
-// ListKnowledge retrieves a list of knowledge resources
-// Results are cached to avoid rate limiting during terraform plan/apply
-func (c *DevinClient) ListKnowledge() (*ListKnowledgeResponse, error) {
-	// Return mock data for demo (development/testing)
+// ===================== Knowledge Notes =====================
+
+// GetKnowledgeNote retrieves a single knowledge note by ID
+// Uses cache when available to avoid rate limiting during terraform plan/apply
+func (c *DevinClient) GetKnowledgeNote(noteID string) (*KnowledgeNote, error) {
 	if IsMockClient(c.APIKey) {
-		return GetMockKnowledgeList(), nil
+		return GetMockKnowledgeNote(noteID)
 	}
 
-	// Check cache first
+	// Try cache first
 	c.knowledgeCacheMu.RLock()
-	if c.isCacheValid() {
-		cached := c.knowledgeCache
-		c.knowledgeCacheMu.RUnlock()
-		return cached, nil
+	if c.isKnowledgeCacheValid() {
+		if note, ok := c.knowledgeCache[noteID]; ok {
+			c.knowledgeCacheMu.RUnlock()
+			return note, nil
+		}
 	}
 	c.knowledgeCacheMu.RUnlock()
 
-	// Cache miss or expired, fetch from API
+	// Cache miss: populate cache from list API
 	c.knowledgeCacheMu.Lock()
-	defer c.knowledgeCacheMu.Unlock()
-
-	// Double-check after acquiring write lock (another goroutine might have updated)
-	if c.isCacheValid() {
-		return c.knowledgeCache, nil
-	}
-
-	// Normal processing
-	respBody, err := c.sendRequest("GET", "/knowledge", nil)
-	if err != nil {
-		return nil, err
-	}
-
-	var response ListKnowledgeResponse
-	if err := json.Unmarshal(respBody, &response); err != nil {
-		return nil, fmt.Errorf("failed to decode JSON response: %w", err)
-	}
-
-	// Update cache
-	c.knowledgeCache = &response
-	c.knowledgeCacheTime = time.Now()
-
-	return &response, nil
-}
-
-// GetKnowledge retrieves a knowledge resource by ID
-// Note: Currently, the Devin API does not explicitly expose a dedicated endpoint
-// for retrieving individual knowledge resources, so we use the List API to extract
-// a specific knowledge resource by ID
-func (c *DevinClient) GetKnowledge(id string) (*Knowledge, error) {
-	// Return mock data for demo (development/testing)
-	if IsMockClient(c.APIKey) {
-		return GetMockKnowledge(id)
-	}
-
-	// Normal processing
-	// Use the list API to get all knowledge resources
-	response, err := c.ListKnowledge()
-	if err != nil {
-		return nil, fmt.Errorf("error occurred while retrieving knowledge list: %w", err)
-	}
-
-	// Search for knowledge resource with matching ID
-	for _, item := range response.Knowledge {
-		if item.ID == id {
-			return &Knowledge{
-				ID:                 item.ID,
-				Name:               item.Name,
-				Body:               item.Body,
-				TriggerDescription: item.TriggerDescription,
-				ParentFolderID:     item.ParentFolderID,
-				CreatedAt:          item.CreatedAt,
-			}, nil
+	// Double-check after acquiring write lock
+	if !c.isKnowledgeCacheValid() {
+		if err := c.populateKnowledgeCache(); err != nil {
+			c.knowledgeCacheMu.Unlock()
+			// Fallback to individual API call
+			return c.getKnowledgeNoteDirect(noteID)
 		}
 	}
+	if note, ok := c.knowledgeCache[noteID]; ok {
+		c.knowledgeCacheMu.Unlock()
+		return note, nil
+	}
+	c.knowledgeCacheMu.Unlock()
 
-	return nil, fmt.Errorf("knowledge resource with ID '%s' not found", id)
+	// Not found in cache, try direct API (might be newly created)
+	return c.getKnowledgeNoteDirect(noteID)
 }
 
-// CreateKnowledge creates a new knowledge resource
-func (c *DevinClient) CreateKnowledge(name, body string, triggerDescription string, parentFolderID string) (*Knowledge, error) {
-	// Return mock data for demo (development/testing)
-	if IsMockClient(c.APIKey) {
-		return CreateMockKnowledge(name, body, triggerDescription, parentFolderID), nil
-	}
-
-	// Normal processing
-	reqBody := CreateKnowledgeRequest{
-		Name:               name,
-		Body:               body,
-		TriggerDescription: triggerDescription,
-		ParentFolderID:     parentFolderID,
-	}
-
-	respBody, err := c.sendRequest("POST", "/knowledge", reqBody)
+// getKnowledgeNoteDirect retrieves a single knowledge note directly from the API
+func (c *DevinClient) getKnowledgeNoteDirect(noteID string) (*KnowledgeNote, error) {
+	path := fmt.Sprintf("/knowledge/notes/%s", noteID)
+	respBody, err := c.sendRequest("GET", path, nil)
 	if err != nil {
 		return nil, err
 	}
 
-	var knowledge Knowledge
-	if err := json.Unmarshal(respBody, &knowledge); err != nil {
+	var note KnowledgeNote
+	if err := json.Unmarshal(respBody, &note); err != nil {
 		return nil, fmt.Errorf("failed to decode JSON response: %w", err)
 	}
 
-	// Invalidate cache after creating a new knowledge
-	c.InvalidateCache()
-
-	return &knowledge, nil
+	return &note, nil
 }
 
-// UpdateKnowledge updates a knowledge resource
-func (c *DevinClient) UpdateKnowledge(id, name, body string, triggerDescription string, parentFolderID string) (*Knowledge, error) {
-	// Return mock data for demo (development/testing)
+// ListKnowledgeNotes retrieves all knowledge notes with pagination
+func (c *DevinClient) ListKnowledgeNotes() ([]KnowledgeNote, error) {
 	if IsMockClient(c.APIKey) {
-		return UpdateMockKnowledge(id, name, body, triggerDescription, parentFolderID), nil
+		return GetMockKnowledgeNoteList(), nil
 	}
 
-	// Normal processing
-	reqBody := UpdateKnowledgeRequest{
-		Name:               name,
-		Body:               body,
-		TriggerDescription: triggerDescription,
-		ParentFolderID:     parentFolderID,
+	var allNotes []KnowledgeNote
+	after := ""
+
+	for {
+		path := "/knowledge/notes?first=200"
+		if after != "" {
+			path += "&after=" + after
+		}
+
+		respBody, err := c.sendRequest("GET", path, nil)
+		if err != nil {
+			return nil, err
+		}
+
+		var response ListKnowledgeNotesResponse
+		if err := json.Unmarshal(respBody, &response); err != nil {
+			return nil, fmt.Errorf("failed to decode JSON response: %w", err)
+		}
+
+		allNotes = append(allNotes, response.Notes...)
+
+		if !response.HasMore {
+			break
+		}
+		after = response.After
 	}
 
-	path := fmt.Sprintf("/knowledge/%s", id)
+	return allNotes, nil
+}
+
+// CreateKnowledgeNote creates a new knowledge note
+func (c *DevinClient) CreateKnowledgeNote(reqBody CreateKnowledgeNoteRequest) (*KnowledgeNote, error) {
+	if IsMockClient(c.APIKey) {
+		return CreateMockKnowledgeNote(reqBody), nil
+	}
+
+	respBody, err := c.sendRequest("POST", "/knowledge/notes", reqBody)
+	if err != nil {
+		return nil, err
+	}
+
+	var note KnowledgeNote
+	if err := json.Unmarshal(respBody, &note); err != nil {
+		return nil, fmt.Errorf("failed to decode JSON response: %w", err)
+	}
+
+	c.InvalidateKnowledgeCache()
+
+	return &note, nil
+}
+
+// UpdateKnowledgeNote updates a knowledge note
+func (c *DevinClient) UpdateKnowledgeNote(noteID string, reqBody UpdateKnowledgeNoteRequest) (*KnowledgeNote, error) {
+	if IsMockClient(c.APIKey) {
+		return UpdateMockKnowledgeNote(noteID, reqBody), nil
+	}
+
+	path := fmt.Sprintf("/knowledge/notes/%s", noteID)
 	respBody, err := c.sendRequest("PUT", path, reqBody)
 	if err != nil {
 		return nil, err
 	}
 
-	var knowledge Knowledge
-	if err := json.Unmarshal(respBody, &knowledge); err != nil {
+	var note KnowledgeNote
+	if err := json.Unmarshal(respBody, &note); err != nil {
 		return nil, fmt.Errorf("failed to decode JSON response: %w", err)
 	}
 
-	// Invalidate cache after updating knowledge
-	c.InvalidateCache()
+	c.InvalidateKnowledgeCache()
 
-	return &knowledge, nil
+	return &note, nil
 }
 
-// DeleteKnowledge deletes a knowledge resource
-func (c *DevinClient) DeleteKnowledge(id string) error {
-	// Return mock data for demo (development/testing)
+// DeleteKnowledgeNote deletes a knowledge note
+func (c *DevinClient) DeleteKnowledgeNote(noteID string) error {
 	if IsMockClient(c.APIKey) {
 		return nil
 	}
 
-	// Normal processing
-	path := fmt.Sprintf("/knowledge/%s", id)
+	path := fmt.Sprintf("/knowledge/notes/%s", noteID)
 	_, err := c.sendRequest("DELETE", path, nil)
 	if err != nil {
 		return err
 	}
 
-	// Invalidate cache after deleting knowledge
-	c.InvalidateCache()
+	c.InvalidateKnowledgeCache()
 
 	return nil
 }
 
-// GetFolderByID retrieves a folder resource by ID
-// Note: Currently, the Devin API does not explicitly expose a dedicated endpoint
-// for retrieving individual folder resources, so we use the List API to extract
-// a specific folder resource by ID
+// ===================== Folders =====================
+
+// ListFolders retrieves all folders with pagination
+func (c *DevinClient) ListFolders() ([]FolderItem, error) {
+	if IsMockClient(c.APIKey) {
+		return GetMockFolderList(), nil
+	}
+
+	var allFolders []FolderItem
+	after := ""
+
+	for {
+		path := "/knowledge/folders?first=200"
+		if after != "" {
+			path += "&after=" + after
+		}
+
+		respBody, err := c.sendRequest("GET", path, nil)
+		if err != nil {
+			return nil, err
+		}
+
+		var response ListFoldersResponse
+		if err := json.Unmarshal(respBody, &response); err != nil {
+			return nil, fmt.Errorf("failed to decode JSON response: %w", err)
+		}
+
+		allFolders = append(allFolders, response.Folders...)
+
+		if !response.HasMore {
+			break
+		}
+		after = response.After
+	}
+
+	return allFolders, nil
+}
+
+// GetFolderByID retrieves a folder by ID from the list
 func (c *DevinClient) GetFolderByID(id string) (*FolderItem, error) {
-	// Return mock data for demo (development/testing)
 	if IsMockClient(c.APIKey) {
 		return GetMockFolderByID(id)
 	}
 
-	// Normal processing
-	// Use the list API to get all knowledge resources (which includes folders)
-	response, err := c.ListKnowledge()
+	folders, err := c.ListFolders()
 	if err != nil {
 		return nil, fmt.Errorf("error occurred while retrieving folder list: %w", err)
 	}
 
-	// Search for folder resource with matching ID
-	for _, item := range response.Folders {
-		if item.ID == id {
-			return &item, nil
+	for _, folder := range folders {
+		if folder.FolderID == id {
+			return &folder, nil
 		}
 	}
 
 	return nil, fmt.Errorf("folder resource with ID '%s' not found", id)
 }
 
-// GetFolderByName retrieves a folder resource by name
-// Note: Currently, the Devin API does not explicitly expose a dedicated endpoint
-// for retrieving individual folder resources, so we use the List API to extract
-// a specific folder resource by name
+// GetFolderByName retrieves a folder by name from the list
 func (c *DevinClient) GetFolderByName(name string) (*FolderItem, error) {
-	// Return mock data for demo (development/testing)
 	if IsMockClient(c.APIKey) {
 		return GetMockFolderByName(name)
 	}
 
-	// Normal processing
-	// Use the list API to get all knowledge resources (which includes folders)
-	response, err := c.ListKnowledge()
+	folders, err := c.ListFolders()
 	if err != nil {
 		return nil, fmt.Errorf("error occurred while retrieving folder list: %w", err)
 	}
 
-	// Search for folder resource with matching name
-	for _, item := range response.Folders {
-		if item.Name == name {
-			return &item, nil
+	for _, folder := range folders {
+		if folder.Name == name {
+			return &folder, nil
 		}
 	}
 
 	return nil, fmt.Errorf("folder resource with name '%s' not found", name)
+}
+
+// ===================== Playbooks =====================
+
+// GetPlaybook retrieves a single playbook by ID
+func (c *DevinClient) GetPlaybook(playbookID string) (*Playbook, error) {
+	if IsMockClient(c.APIKey) {
+		return GetMockPlaybook(playbookID)
+	}
+
+	path := fmt.Sprintf("/playbooks/%s", playbookID)
+	respBody, err := c.sendRequest("GET", path, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	var playbook Playbook
+	if err := json.Unmarshal(respBody, &playbook); err != nil {
+		return nil, fmt.Errorf("failed to decode JSON response: %w", err)
+	}
+
+	return &playbook, nil
+}
+
+// CreatePlaybook creates a new playbook
+func (c *DevinClient) CreatePlaybook(reqBody CreatePlaybookRequest) (*Playbook, error) {
+	if IsMockClient(c.APIKey) {
+		return CreateMockPlaybook(reqBody), nil
+	}
+
+	respBody, err := c.sendRequest("POST", "/playbooks", reqBody)
+	if err != nil {
+		return nil, err
+	}
+
+	var playbook Playbook
+	if err := json.Unmarshal(respBody, &playbook); err != nil {
+		return nil, fmt.Errorf("failed to decode JSON response: %w", err)
+	}
+
+	return &playbook, nil
+}
+
+// UpdatePlaybook updates a playbook
+func (c *DevinClient) UpdatePlaybook(playbookID string, reqBody UpdatePlaybookRequest) (*Playbook, error) {
+	if IsMockClient(c.APIKey) {
+		return UpdateMockPlaybook(playbookID, reqBody), nil
+	}
+
+	path := fmt.Sprintf("/playbooks/%s", playbookID)
+	respBody, err := c.sendRequest("PUT", path, reqBody)
+	if err != nil {
+		return nil, err
+	}
+
+	var playbook Playbook
+	if err := json.Unmarshal(respBody, &playbook); err != nil {
+		return nil, fmt.Errorf("failed to decode JSON response: %w", err)
+	}
+
+	return &playbook, nil
+}
+
+// DeletePlaybook deletes a playbook
+func (c *DevinClient) DeletePlaybook(playbookID string) error {
+	if IsMockClient(c.APIKey) {
+		return nil
+	}
+
+	path := fmt.Sprintf("/playbooks/%s", playbookID)
+	_, err := c.sendRequest("DELETE", path, nil)
+	return err
+}
+
+// ===================== Secrets =====================
+
+// ListSecrets retrieves all secrets
+func (c *DevinClient) ListSecrets() ([]Secret, error) {
+	if IsMockClient(c.APIKey) {
+		return GetMockSecretList(), nil
+	}
+
+	var allSecrets []Secret
+	after := ""
+
+	for {
+		path := "/secrets?first=200"
+		if after != "" {
+			path += "&after=" + after
+		}
+
+		respBody, err := c.sendRequest("GET", path, nil)
+		if err != nil {
+			return nil, err
+		}
+
+		var response ListSecretsResponse
+		if err := json.Unmarshal(respBody, &response); err != nil {
+			return nil, fmt.Errorf("failed to decode JSON response: %w", err)
+		}
+
+		allSecrets = append(allSecrets, response.Secrets...)
+
+		if !response.HasMore {
+			break
+		}
+		after = response.After
+	}
+
+	return allSecrets, nil
+}
+
+// GetSecretByID retrieves a secret by ID from the list
+func (c *DevinClient) GetSecretByID(secretID string) (*Secret, error) {
+	if IsMockClient(c.APIKey) {
+		return GetMockSecretByID(secretID)
+	}
+
+	secrets, err := c.ListSecrets()
+	if err != nil {
+		return nil, fmt.Errorf("error occurred while retrieving secret list: %w", err)
+	}
+
+	for _, secret := range secrets {
+		if secret.SecretID == secretID {
+			return &secret, nil
+		}
+	}
+
+	return nil, fmt.Errorf("secret with ID '%s' not found", secretID)
+}
+
+// CreateSecret creates a new secret
+func (c *DevinClient) CreateSecret(reqBody CreateSecretRequest) (*Secret, error) {
+	if IsMockClient(c.APIKey) {
+		return CreateMockSecret(reqBody), nil
+	}
+
+	respBody, err := c.sendRequest("POST", "/secrets", reqBody)
+	if err != nil {
+		return nil, err
+	}
+
+	var secret Secret
+	if err := json.Unmarshal(respBody, &secret); err != nil {
+		return nil, fmt.Errorf("failed to decode JSON response: %w", err)
+	}
+
+	return &secret, nil
+}
+
+// DeleteSecret deletes a secret
+func (c *DevinClient) DeleteSecret(secretID string) error {
+	if IsMockClient(c.APIKey) {
+		return nil
+	}
+
+	path := fmt.Sprintf("/secrets/%s", secretID)
+	_, err := c.sendRequest("DELETE", path, nil)
+	return err
+}
+
+// ===================== Schedules =====================
+
+// GetSchedule retrieves a single schedule by ID
+func (c *DevinClient) GetSchedule(scheduleID string) (*Schedule, error) {
+	if IsMockClient(c.APIKey) {
+		return GetMockSchedule(scheduleID)
+	}
+
+	path := fmt.Sprintf("/schedules/%s", scheduleID)
+	respBody, err := c.sendRequest("GET", path, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	var schedule Schedule
+	if err := json.Unmarshal(respBody, &schedule); err != nil {
+		return nil, fmt.Errorf("failed to decode JSON response: %w", err)
+	}
+
+	return &schedule, nil
+}
+
+// CreateSchedule creates a new schedule
+func (c *DevinClient) CreateSchedule(reqBody CreateScheduleRequest) (*Schedule, error) {
+	if IsMockClient(c.APIKey) {
+		return CreateMockSchedule(reqBody), nil
+	}
+
+	respBody, err := c.sendRequest("POST", "/schedules", reqBody)
+	if err != nil {
+		return nil, err
+	}
+
+	var schedule Schedule
+	if err := json.Unmarshal(respBody, &schedule); err != nil {
+		return nil, fmt.Errorf("failed to decode JSON response: %w", err)
+	}
+
+	return &schedule, nil
+}
+
+// UpdateSchedule updates a schedule (PATCH - partial update)
+func (c *DevinClient) UpdateSchedule(scheduleID string, reqBody UpdateScheduleRequest) (*Schedule, error) {
+	if IsMockClient(c.APIKey) {
+		return UpdateMockSchedule(scheduleID, reqBody), nil
+	}
+
+	path := fmt.Sprintf("/schedules/%s", scheduleID)
+	respBody, err := c.sendRequest("PATCH", path, reqBody)
+	if err != nil {
+		return nil, err
+	}
+
+	var schedule Schedule
+	if err := json.Unmarshal(respBody, &schedule); err != nil {
+		return nil, fmt.Errorf("failed to decode JSON response: %w", err)
+	}
+
+	return &schedule, nil
+}
+
+// DeleteSchedule deletes a schedule
+func (c *DevinClient) DeleteSchedule(scheduleID string) error {
+	if IsMockClient(c.APIKey) {
+		return nil
+	}
+
+	path := fmt.Sprintf("/schedules/%s", scheduleID)
+	_, err := c.sendRequest("DELETE", path, nil)
+	return err
 }
