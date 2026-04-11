@@ -27,6 +27,10 @@ jobs:
         terraform-directories:
           - tests/simple
           - tests/import_block
+          - tests/playbook
+          - tests/secret
+          - tests/schedule
+          - tests/data_sources
     steps:
       - name: Checkout Code
         uses: actions/checkout@v5

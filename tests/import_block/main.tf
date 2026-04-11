@@ -12,32 +12,113 @@ provider "devin" {
   org_id  = "org-test"
 }
 
-# Use an import block to import existing knowledge resource
+# ===================== Knowledge Import =====================
+
 import {
   to = devin_knowledge.imported_block
   id = "note-mock-1"
 }
 
-# Definition of the imported resource
 resource "devin_knowledge" "imported_block" {
   name    = "Mock Knowledge 1"
   body    = "This is a mock knowledge for testing"
   trigger = "Test trigger description"
 }
 
-# Definition of a regular knowledge resource
+# ===================== Playbook Import =====================
+
+import {
+  to = devin_playbook.imported_block
+  id = "playbook-mock-1"
+}
+
+resource "devin_playbook" "imported_block" {
+  title  = "Mock Playbook"
+  body   = "This is a mock playbook for testing"
+  status = "active"
+}
+
+# ===================== Schedule Import =====================
+
+import {
+  to = devin_schedule.imported_block
+  id = "schedule-mock-1"
+}
+
+resource "devin_schedule" "imported_block" {
+  prompt      = "Scheduled task prompt"
+  cron        = "0 9 * * 1"
+  playbook_id = "playbook-mock-1"
+}
+
+# ===================== Regular Resources =====================
+
 resource "devin_knowledge" "example" {
   name    = "Sample Knowledge"
   body    = "This is a sample knowledge created with Terraform"
   trigger = "This knowledge is triggered under specific conditions"
 }
 
-# Output the imported resource ID
-output "imported_id" {
+resource "devin_playbook" "example" {
+  title  = "Sample Playbook"
+  body   = "Playbook content for testing"
+  status = "active"
+}
+
+resource "devin_secret" "example" {
+  name  = "IMPORT_TEST_SECRET"
+  value = "secret-value"
+}
+
+resource "devin_schedule" "example" {
+  prompt = "Regular schedule task"
+  cron   = "0 12 * * *"
+}
+
+# ===================== Data Sources =====================
+
+data "devin_knowledge" "lookup" {
+  id = "note-mock-2"
+}
+
+data "devin_folder" "lookup" {
+  id = "folder-mock-2"
+}
+
+# ===================== Outputs =====================
+
+output "imported_knowledge_id" {
   value = devin_knowledge.imported_block.id
 }
 
-# Output the imported resource name
-output "imported_name" {
-  value = devin_knowledge.imported_block.name
+output "imported_playbook_id" {
+  value = devin_playbook.imported_block.id
+}
+
+output "imported_schedule_id" {
+  value = devin_schedule.imported_block.id
+}
+
+output "knowledge_id" {
+  value = devin_knowledge.example.id
+}
+
+output "playbook_id" {
+  value = devin_playbook.example.id
+}
+
+output "secret_id" {
+  value = devin_secret.example.id
+}
+
+output "schedule_id" {
+  value = devin_schedule.example.id
+}
+
+output "datasource_knowledge_name" {
+  value = data.devin_knowledge.lookup.name
+}
+
+output "datasource_folder_name" {
+  value = data.devin_folder.lookup.name
 } 
