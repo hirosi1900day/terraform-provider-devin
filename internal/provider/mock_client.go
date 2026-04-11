@@ -35,6 +35,52 @@ var globalMockStore = &MockStore{
 	schedules: make(map[string]*Schedule),
 }
 
+func init() {
+	seedMockStore()
+}
+
+// seedMockStore populates the mock store with initial data for terraform plan tests
+func seedMockStore() {
+	now := float64(time.Now().Unix())
+	repo := "owner/repo"
+
+	globalMockStore.knowledge["note-mock-1"] = &KnowledgeNote{
+		NoteID: "note-mock-1", Name: "モックナレッジ1",
+		Body: "これはテスト用のモックナレッジです", Trigger: "テスト用トリガーの説明",
+		FolderID: "folder-mock-1", FolderPath: "/モックフォルダ1",
+		IsEnabled: true, AccessType: "org",
+		CreatedAt: now - 86400, UpdatedAt: now - 3600,
+	}
+	globalMockStore.knowledge["note-mock-2"] = &KnowledgeNote{
+		NoteID: "note-mock-2", Name: "モックナレッジ2",
+		Body: "これは別のテスト用のモックナレッジです", Trigger: "別のテスト用トリガーの説明",
+		FolderID: "folder-mock-2", FolderPath: "/モックフォルダ2",
+		IsEnabled: false, PinnedRepo: &repo, AccessType: "org",
+		CreatedAt: now - 172800, UpdatedAt: now - 7200,
+	}
+	globalMockStore.playbooks["playbook-mock-1"] = &Playbook{
+		PlaybookID: "playbook-mock-1", Title: "モックPlaybook",
+		Body: "テスト用Playbookの内容", Status: "active",
+		AccessType: "org", OrgID: "org-mock",
+		CreatedAt: now - 86400, UpdatedAt: now - 3600,
+		CreatedByUserID: "user-1", CreatedByUserName: "Test User",
+		UpdatedByUserID: "user-1", UpdatedByUserName: "Test User",
+	}
+	globalMockStore.secrets["secret-mock-1"] = &Secret{
+		SecretID: "secret-mock-1", Name: "DATABASE_URL",
+		CreatedAt: now - 86400, UpdatedAt: now - 3600,
+	}
+	globalMockStore.secrets["secret-mock-2"] = &Secret{
+		SecretID: "secret-mock-2", Name: "API_TOKEN",
+		CreatedAt: now - 172800, UpdatedAt: now - 7200,
+	}
+	globalMockStore.schedules["schedule-mock-1"] = &Schedule{
+		ScheduleID: "schedule-mock-1", Prompt: "定期タスクのプロンプト",
+		Cron: "0 9 * * 1", PlaybookID: "playbook-mock-1",
+		Status: "active", CreatedAt: now - 86400, UpdatedAt: now - 3600,
+	}
+}
+
 // ResetMockStore clears all mock data (call in test setup)
 func ResetMockStore() {
 	globalMockStore.mu.Lock()
