@@ -11,18 +11,18 @@ jobs:
     name: Build and Test
     runs-on: ubuntu-latest
     steps:
-      - name: Check out code
+      - name: Checkout Code
         uses: actions/checkout@v5
 
-      - name: Set up Go
+      - name: Setup Go
         uses: actions/setup-go@v6
         with:
           go-version-file: 'go.mod'
 
-      - name: Get dependencies
+      - name: Download Dependencies
         run: go mod download
 
-      - name: Format check
+      - name: Format Check
         run: |
           if [ "$(gofmt -l . | wc -l)" -gt 0 ]; then
             gofmt -d .
@@ -30,25 +30,25 @@ jobs:
             exit 1
           fi
 
-      - name: Vet
+      - name: Go Vet
         run: go vet ./...
 
-      - name: Install golint
+      - name: Install Golint
         run: go install golang.org/x/lint/golint@latest
 
-      - name: Lint
+      - name: Lint Check
         run: golint -set_exit_status ./...
 
-      - name: Build
+      - name: Build Provider
         run: go build -v -o terraform-provider-devin
 
-      - name: Test
+      - name: Unit Test
         run: go test -v ./...
 
       - name: Test Coverage
         run: go test -race -coverprofile=coverage.txt -covermode=atomic ./...
 
-      - name: Upload coverage to Codecov
+      - name: Upload Coverage
         uses: codecov/codecov-action@v6
         with:
           file: ./coverage.txt
