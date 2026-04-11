@@ -463,6 +463,7 @@ func (c *DevinClient) UpdateKnowledgeNote(noteID string, reqBody UpdateKnowledge
 // DeleteKnowledgeNote deletes a knowledge note
 func (c *DevinClient) DeleteKnowledgeNote(noteID string) error {
 	if IsMockClient(c.APIKey) {
+		DeleteMockKnowledgeNote(noteID)
 		return nil
 	}
 
@@ -619,6 +620,7 @@ func (c *DevinClient) UpdatePlaybook(playbookID string, reqBody UpdatePlaybookRe
 // DeletePlaybook deletes a playbook
 func (c *DevinClient) DeletePlaybook(playbookID string) error {
 	if IsMockClient(c.APIKey) {
+		DeleteMockPlaybook(playbookID)
 		return nil
 	}
 
@@ -707,6 +709,7 @@ func (c *DevinClient) CreateSecret(reqBody CreateSecretRequest) (*Secret, error)
 // DeleteSecret deletes a secret
 func (c *DevinClient) DeleteSecret(secretID string) error {
 	if IsMockClient(c.APIKey) {
+		DeleteMockSecret(secretID)
 		return nil
 	}
 
@@ -779,6 +782,7 @@ func (c *DevinClient) UpdateSchedule(scheduleID string, reqBody UpdateScheduleRe
 // DeleteSchedule deletes a schedule
 func (c *DevinClient) DeleteSchedule(scheduleID string) error {
 	if IsMockClient(c.APIKey) {
+		DeleteMockSchedule(scheduleID)
 		return nil
 	}
 

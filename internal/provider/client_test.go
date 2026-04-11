@@ -29,7 +29,18 @@ func TestBaseURL(t *testing.T) {
 }
 
 func TestListKnowledgeNotes_Mock(t *testing.T) {
+	ResetMockStore()
 	client := NewClient("test_api_key", "org-mock")
+
+	// Seed 2 notes
+	isEnabled := true
+	client.CreateKnowledgeNote(CreateKnowledgeNoteRequest{
+		Name: "モックナレッジ1", Body: "内容1", Trigger: "トリガー1", IsEnabled: &isEnabled,
+	})
+	client.CreateKnowledgeNote(CreateKnowledgeNoteRequest{
+		Name: "モックナレッジ2", Body: "内容2", Trigger: "トリガー2", IsEnabled: &isEnabled,
+	})
+
 	notes, err := client.ListKnowledgeNotes()
 	if err != nil {
 		t.Fatalf("ListKnowledgeNotes() error = %v", err)
@@ -38,25 +49,29 @@ func TestListKnowledgeNotes_Mock(t *testing.T) {
 	if len(notes) != 2 {
 		t.Errorf("ListKnowledgeNotes() returned %d items, want 2", len(notes))
 	}
-
-	if notes[0].NoteID != "note-mock-1" {
-		t.Errorf("First note ID = %s, want %s", notes[0].NoteID, "note-mock-1")
-	}
-	if notes[0].Name != "モックナレッジ1" {
-		t.Errorf("First note Name = %s, want %s", notes[0].Name, "モックナレッジ1")
-	}
 }
 
 func TestGetKnowledgeNote_Mock(t *testing.T) {
+	ResetMockStore()
 	client := NewClient("test_api_key", "org-mock")
 
-	note, err := client.GetKnowledgeNote("note-mock-1")
+	// Seed a note
+	isEnabled := true
+	created, _ := client.CreateKnowledgeNote(CreateKnowledgeNoteRequest{
+		Name:      "モックナレッジ1",
+		Body:      "これはテスト用のモックナレッジです",
+		Trigger:   "テスト用トリガーの説明",
+		FolderID:  "folder-mock-1",
+		IsEnabled: &isEnabled,
+	})
+
+	note, err := client.GetKnowledgeNote(created.NoteID)
 	if err != nil {
 		t.Fatalf("GetKnowledgeNote() error = %v", err)
 	}
 
-	if note.NoteID != "note-mock-1" {
-		t.Errorf("GetKnowledgeNote() NoteID = %s, want %s", note.NoteID, "note-mock-1")
+	if note.NoteID != created.NoteID {
+		t.Errorf("GetKnowledgeNote() NoteID = %s, want %s", note.NoteID, created.NoteID)
 	}
 	if note.Name != "モックナレッジ1" {
 		t.Errorf("GetKnowledgeNote() Name = %s, want %s", note.Name, "モックナレッジ1")
@@ -79,6 +94,7 @@ func TestGetKnowledgeNote_Mock(t *testing.T) {
 }
 
 func TestCreateKnowledgeNote_Mock(t *testing.T) {
+	ResetMockStore()
 	client := NewClient("test_api_key", "org-mock")
 	isEnabled := true
 	reqBody := CreateKnowledgeNoteRequest{
@@ -93,8 +109,8 @@ func TestCreateKnowledgeNote_Mock(t *testing.T) {
 		t.Fatalf("CreateKnowledgeNote() error = %v", err)
 	}
 
-	if note.NoteID != "note-new-mock" {
-		t.Errorf("CreateKnowledgeNote() NoteID = %s, want %s", note.NoteID, "note-new-mock")
+	if note.NoteID == "" {
+		t.Errorf("CreateKnowledgeNote() NoteID is empty")
 	}
 	if note.Name != "テストナレッジ" {
 		t.Errorf("CreateKnowledgeNote() Name = %s, want %s", note.Name, "テストナレッジ")
@@ -105,8 +121,15 @@ func TestCreateKnowledgeNote_Mock(t *testing.T) {
 }
 
 func TestUpdateKnowledgeNote_Mock(t *testing.T) {
+	ResetMockStore()
 	client := NewClient("test_api_key", "org-mock")
+
+	// Seed a note first
 	isEnabled := true
+	created, _ := client.CreateKnowledgeNote(CreateKnowledgeNoteRequest{
+		Name: "Original", Body: "Body", Trigger: "Trigger", IsEnabled: &isEnabled,
+	})
+
 	reqBody := UpdateKnowledgeNoteRequest{
 		Name:      "更新ナレッジ",
 		Body:      "更新内容",
@@ -114,13 +137,13 @@ func TestUpdateKnowledgeNote_Mock(t *testing.T) {
 		FolderID:  "updated-folder-id",
 		IsEnabled: &isEnabled,
 	}
-	note, err := client.UpdateKnowledgeNote("note-mock-1", reqBody)
+	note, err := client.UpdateKnowledgeNote(created.NoteID, reqBody)
 	if err != nil {
 		t.Fatalf("UpdateKnowledgeNote() error = %v", err)
 	}
 
-	if note.NoteID != "note-mock-1" {
-		t.Errorf("UpdateKnowledgeNote() NoteID = %s, want %s", note.NoteID, "note-mock-1")
+	if note.NoteID != created.NoteID {
+		t.Errorf("UpdateKnowledgeNote() NoteID = %s, want %s", note.NoteID, created.NoteID)
 	}
 	if note.Name != "更新ナレッジ" {
 		t.Errorf("UpdateKnowledgeNote() Name = %s, want %s", note.Name, "更新ナレッジ")
@@ -128,8 +151,14 @@ func TestUpdateKnowledgeNote_Mock(t *testing.T) {
 }
 
 func TestDeleteKnowledgeNote_Mock(t *testing.T) {
+	ResetMockStore()
 	client := NewClient("test_api_key", "org-mock")
-	err := client.DeleteKnowledgeNote("note-mock-1")
+
+	isEnabled := true
+	created, _ := client.CreateKnowledgeNote(CreateKnowledgeNoteRequest{
+		Name: "ToDelete", Body: "Body", Trigger: "Trigger", IsEnabled: &isEnabled,
+	})
+	err := client.DeleteKnowledgeNote(created.NoteID)
 	if err != nil {
 		t.Errorf("DeleteKnowledgeNote() error = %v", err)
 	}
@@ -163,14 +192,21 @@ func TestGetFolderByName_Mock(t *testing.T) {
 }
 
 func TestGetPlaybook_Mock(t *testing.T) {
+	ResetMockStore()
 	client := NewClient("test_api_key", "org-mock")
-	playbook, err := client.GetPlaybook("playbook-mock-1")
+
+	// Seed a playbook
+	created, _ := client.CreatePlaybook(CreatePlaybookRequest{
+		Title: "モックPlaybook", Body: "テスト用Playbookの内容", Status: "active",
+	})
+
+	playbook, err := client.GetPlaybook(created.PlaybookID)
 	if err != nil {
 		t.Fatalf("GetPlaybook() error = %v", err)
 	}
 
-	if playbook.PlaybookID != "playbook-mock-1" {
-		t.Errorf("GetPlaybook() PlaybookID = %s, want %s", playbook.PlaybookID, "playbook-mock-1")
+	if playbook.PlaybookID != created.PlaybookID {
+		t.Errorf("GetPlaybook() PlaybookID = %s, want %s", playbook.PlaybookID, created.PlaybookID)
 	}
 	if playbook.Title != "モックPlaybook" {
 		t.Errorf("GetPlaybook() Title = %s, want %s", playbook.Title, "モックPlaybook")
@@ -181,6 +217,7 @@ func TestGetPlaybook_Mock(t *testing.T) {
 }
 
 func TestCreatePlaybook_Mock(t *testing.T) {
+	ResetMockStore()
 	client := NewClient("test_api_key", "org-mock")
 	reqBody := CreatePlaybookRequest{
 		Title: "新しいPlaybook",
@@ -191,8 +228,8 @@ func TestCreatePlaybook_Mock(t *testing.T) {
 		t.Fatalf("CreatePlaybook() error = %v", err)
 	}
 
-	if playbook.PlaybookID != "playbook-new-mock" {
-		t.Errorf("CreatePlaybook() PlaybookID = %s, want %s", playbook.PlaybookID, "playbook-new-mock")
+	if playbook.PlaybookID == "" {
+		t.Errorf("CreatePlaybook() PlaybookID is empty")
 	}
 	if playbook.Title != "新しいPlaybook" {
 		t.Errorf("CreatePlaybook() Title = %s, want %s", playbook.Title, "新しいPlaybook")
@@ -200,14 +237,20 @@ func TestCreatePlaybook_Mock(t *testing.T) {
 }
 
 func TestDeletePlaybook_Mock(t *testing.T) {
+	ResetMockStore()
 	client := NewClient("test_api_key", "org-mock")
-	err := client.DeletePlaybook("playbook-mock-1")
+
+	created, _ := client.CreatePlaybook(CreatePlaybookRequest{
+		Title: "ToDelete", Body: "Body", Status: "active",
+	})
+	err := client.DeletePlaybook(created.PlaybookID)
 	if err != nil {
 		t.Errorf("DeletePlaybook() error = %v", err)
 	}
 }
 
 func TestCreateSecret_Mock(t *testing.T) {
+	ResetMockStore()
 	client := NewClient("test_api_key", "org-mock")
 	reqBody := CreateSecretRequest{
 		Name:  "TEST_SECRET",
@@ -218,8 +261,8 @@ func TestCreateSecret_Mock(t *testing.T) {
 		t.Fatalf("CreateSecret() error = %v", err)
 	}
 
-	if secret.SecretID != "secret-new-mock" {
-		t.Errorf("CreateSecret() SecretID = %s, want %s", secret.SecretID, "secret-new-mock")
+	if secret.SecretID == "" {
+		t.Errorf("CreateSecret() SecretID is empty")
 	}
 	if secret.Name != "TEST_SECRET" {
 		t.Errorf("CreateSecret() Name = %s, want %s", secret.Name, "TEST_SECRET")
@@ -227,22 +270,33 @@ func TestCreateSecret_Mock(t *testing.T) {
 }
 
 func TestDeleteSecret_Mock(t *testing.T) {
+	ResetMockStore()
 	client := NewClient("test_api_key", "org-mock")
-	err := client.DeleteSecret("secret-mock-1")
+
+	created, _ := client.CreateSecret(CreateSecretRequest{
+		Name: "ToDelete", Value: "val",
+	})
+	err := client.DeleteSecret(created.SecretID)
 	if err != nil {
 		t.Errorf("DeleteSecret() error = %v", err)
 	}
 }
 
 func TestGetSchedule_Mock(t *testing.T) {
+	ResetMockStore()
 	client := NewClient("test_api_key", "org-mock")
-	schedule, err := client.GetSchedule("schedule-mock-1")
+
+	created, _ := client.CreateSchedule(CreateScheduleRequest{
+		Prompt: "定期タスクのプロンプト", Cron: "0 9 * * 1",
+	})
+
+	schedule, err := client.GetSchedule(created.ScheduleID)
 	if err != nil {
 		t.Fatalf("GetSchedule() error = %v", err)
 	}
 
-	if schedule.ScheduleID != "schedule-mock-1" {
-		t.Errorf("GetSchedule() ScheduleID = %s, want %s", schedule.ScheduleID, "schedule-mock-1")
+	if schedule.ScheduleID != created.ScheduleID {
+		t.Errorf("GetSchedule() ScheduleID = %s, want %s", schedule.ScheduleID, created.ScheduleID)
 	}
 	if schedule.Cron != "0 9 * * 1" {
 		t.Errorf("GetSchedule() Cron = %s, want %s", schedule.Cron, "0 9 * * 1")
@@ -250,6 +304,7 @@ func TestGetSchedule_Mock(t *testing.T) {
 }
 
 func TestCreateSchedule_Mock(t *testing.T) {
+	ResetMockStore()
 	client := NewClient("test_api_key", "org-mock")
 	reqBody := CreateScheduleRequest{
 		Prompt: "テストプロンプト",
@@ -260,8 +315,8 @@ func TestCreateSchedule_Mock(t *testing.T) {
 		t.Fatalf("CreateSchedule() error = %v", err)
 	}
 
-	if schedule.ScheduleID != "schedule-new-mock" {
-		t.Errorf("CreateSchedule() ScheduleID = %s, want %s", schedule.ScheduleID, "schedule-new-mock")
+	if schedule.ScheduleID == "" {
+		t.Errorf("CreateSchedule() ScheduleID is empty")
 	}
 	if schedule.Prompt != "テストプロンプト" {
 		t.Errorf("CreateSchedule() Prompt = %s, want %s", schedule.Prompt, "テストプロンプト")
@@ -269,8 +324,13 @@ func TestCreateSchedule_Mock(t *testing.T) {
 }
 
 func TestDeleteSchedule_Mock(t *testing.T) {
+	ResetMockStore()
 	client := NewClient("test_api_key", "org-mock")
-	err := client.DeleteSchedule("schedule-mock-1")
+
+	created, _ := client.CreateSchedule(CreateScheduleRequest{
+		Prompt: "ToDelete", Cron: "0 * * * *",
+	})
+	err := client.DeleteSchedule(created.ScheduleID)
 	if err != nil {
 		t.Errorf("DeleteSchedule() error = %v", err)
 	}
