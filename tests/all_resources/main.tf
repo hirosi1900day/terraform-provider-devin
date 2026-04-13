@@ -21,24 +21,21 @@ resource "devin_knowledge" "example" {
 }
 
 resource "devin_knowledge" "with_options" {
-  name       = "Knowledge with Options"
-  body       = "Knowledge body with optional fields"
-  trigger    = "Trigger with options"
-  is_enabled = false
+  name    = "Knowledge with Options"
+  body    = "Knowledge body with optional fields"
+  trigger = "Trigger with options"
 }
 
 # ===================== Playbook Resource =====================
 
 resource "devin_playbook" "example" {
-  title  = "Sample Playbook"
-  body   = "This playbook does automated code reviews"
-  status = "active"
+  title = "Sample Playbook"
+  body  = "This playbook does automated code reviews"
 }
 
 resource "devin_playbook" "inactive" {
-  title  = "Inactive Playbook"
-  body   = "This playbook is disabled"
-  status = "inactive"
+  title = "Inactive Playbook"
+  body  = "This playbook is disabled"
 }
 
 # ===================== Secret Resource =====================
@@ -56,11 +53,13 @@ resource "devin_secret" "api_token" {
 # ===================== Schedule Resource =====================
 
 resource "devin_schedule" "daily" {
+  name   = "Daily Maintenance"
   prompt = "Run daily maintenance tasks"
   cron   = "0 9 * * *"
 }
 
 resource "devin_schedule" "weekly_with_playbook" {
+  name        = "Weekly Code Review"
   prompt      = "Weekly code review"
   cron        = "0 10 * * 1"
   playbook_id = "playbook-mock-1"
@@ -102,10 +101,6 @@ output "playbook_id" {
 
 output "playbook_title" {
   value = devin_playbook.example.title
-}
-
-output "playbook_inactive_status" {
-  value = devin_playbook.inactive.status
 }
 
 # Secret outputs

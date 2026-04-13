@@ -11,6 +11,16 @@ func IsMockClient(apiKey string) bool {
 	return apiKey == "test_api_key"
 }
 
+// stringPtr returns a pointer to a string
+func stringPtr(s string) *string {
+	return &s
+}
+
+// formatTime converts a Unix timestamp to ISO 8601 string
+func formatTime(unixTime float64) string {
+	return time.Unix(int64(unixTime), 0).UTC().Format(time.RFC3339)
+}
+
 // ===================== Stateful Mock Store =====================
 
 // MockStore holds all mock data in memory with thread-safe access.
@@ -60,24 +70,28 @@ func seedMockStore() {
 	}
 	globalMockStore.playbooks["playbook-mock-1"] = &Playbook{
 		PlaybookID: "playbook-mock-1", Title: "モックPlaybook",
-		Body: "テスト用Playbookの内容", Status: "active",
+		Body:       "テスト用Playbookの内容",
 		AccessType: "org", OrgID: "org-mock",
 		CreatedAt: now - 86400, UpdatedAt: now - 3600,
-		CreatedByUserID: "user-1", CreatedByUserName: "Test User",
-		UpdatedByUserID: "user-1", UpdatedByUserName: "Test User",
+		CreatedBy: "user-1", UpdatedBy: "user-1",
 	}
 	globalMockStore.secrets["secret-mock-1"] = &Secret{
-		SecretID: "secret-mock-1", Name: "DATABASE_URL",
+		SecretID: "secret-mock-1", Key: "DATABASE_URL",
+		SecretType: "key-value", IsSensitive: true,
 		CreatedAt: now - 86400, UpdatedAt: now - 3600,
 	}
 	globalMockStore.secrets["secret-mock-2"] = &Secret{
-		SecretID: "secret-mock-2", Name: "API_TOKEN",
+		SecretID: "secret-mock-2", Key: "API_TOKEN",
+		SecretType: "key-value", IsSensitive: true,
 		CreatedAt: now - 172800, UpdatedAt: now - 7200,
 	}
 	globalMockStore.schedules["schedule-mock-1"] = &Schedule{
-		ScheduleID: "schedule-mock-1", Prompt: "定期タスクのプロンプト",
-		Cron: "0 9 * * 1", PlaybookID: "playbook-mock-1",
-		Status: "active", CreatedAt: now - 86400, UpdatedAt: now - 3600,
+		ScheduledSessionID: "schedule-mock-1", Name: "定期タスク",
+		Prompt:    "定期タスクのプロンプト",
+		Frequency: stringPtr("0 9 * * 1"),
+		Playbook:  &SchedulePlaybookInfo{PlaybookID: "playbook-mock-1", Title: "モックPlaybook"},
+		Enabled:   true,
+		CreatedAt: formatTime(now - 86400), UpdatedAt: formatTime(now - 3600),
 	}
 }
 
@@ -129,18 +143,14 @@ func CreateMockKnowledgeNote(req CreateKnowledgeNoteRequest) *KnowledgeNote {
 	globalMockStore.knowledgeSeq++
 	id := fmt.Sprintf("note-mock-%d", globalMockStore.knowledgeSeq)
 
-	isEnabled := true
-	if req.IsEnabled != nil {
-		isEnabled = *req.IsEnabled
-	}
 	note := &KnowledgeNote{
 		NoteID:     id,
 		Name:       req.Name,
 		Body:       req.Body,
 		Trigger:    req.Trigger,
-		FolderID:   req.FolderID,
+		FolderID:   "",
 		FolderPath: "",
-		IsEnabled:  isEnabled,
+		IsEnabled:  true,
 		PinnedRepo: req.PinnedRepo,
 		AccessType: "org",
 		CreatedAt:  now,
@@ -156,10 +166,6 @@ func UpdateMockKnowledgeNote(noteID string, req UpdateKnowledgeNoteRequest) *Kno
 	defer globalMockStore.mu.Unlock()
 
 	now := float64(time.Now().Unix())
-	isEnabled := true
-	if req.IsEnabled != nil {
-		isEnabled = *req.IsEnabled
-	}
 
 	existing, ok := globalMockStore.knowledge[noteID]
 	createdAt := now - 86400
@@ -172,9 +178,9 @@ func UpdateMockKnowledgeNote(noteID string, req UpdateKnowledgeNoteRequest) *Kno
 		Name:       req.Name,
 		Body:       req.Body,
 		Trigger:    req.Trigger,
-		FolderID:   req.FolderID,
+		FolderID:   "",
 		FolderPath: "",
-		IsEnabled:  isEnabled,
+		IsEnabled:  true,
 		PinnedRepo: req.PinnedRepo,
 		AccessType: "org",
 		CreatedAt:  createdAt,
@@ -283,24 +289,17 @@ func CreateMockPlaybook(req CreatePlaybookRequest) *Playbook {
 	globalMockStore.playbookSeq++
 	id := fmt.Sprintf("playbook-mock-%d", globalMockStore.playbookSeq)
 
-	status := "active"
-	if req.Status != "" {
-		status = req.Status
-	}
 	pb := &Playbook{
-		PlaybookID:        id,
-		Title:             req.Title,
-		Body:              req.Body,
-		Status:            status,
-		AccessType:        "org",
-		Macro:             nil,
-		OrgID:             "org-mock",
-		CreatedAt:         now,
-		UpdatedAt:         now,
-		CreatedByUserID:   "user-1",
-		CreatedByUserName: "Test User",
-		UpdatedByUserID:   "user-1",
-		UpdatedByUserName: "Test User",
+		PlaybookID: id,
+		Title:      req.Title,
+		Body:       req.Body,
+		AccessType: "org",
+		Macro:      nil,
+		OrgID:      "org-mock",
+		CreatedAt:  now,
+		UpdatedAt:  now,
+		CreatedBy:  "user-1",
+		UpdatedBy:  "user-1",
 	}
 	globalMockStore.playbooks[id] = pb
 	return pb
@@ -312,10 +311,6 @@ func UpdateMockPlaybook(playbookID string, req UpdatePlaybookRequest) *Playbook 
 	defer globalMockStore.mu.Unlock()
 
 	now := float64(time.Now().Unix())
-	status := "active"
-	if req.Status != "" {
-		status = req.Status
-	}
 
 	existing, ok := globalMockStore.playbooks[playbookID]
 	createdAt := now - 86400
@@ -324,19 +319,16 @@ func UpdateMockPlaybook(playbookID string, req UpdatePlaybookRequest) *Playbook 
 	}
 
 	pb := &Playbook{
-		PlaybookID:        playbookID,
-		Title:             req.Title,
-		Body:              req.Body,
-		Status:            status,
-		AccessType:        "org",
-		Macro:             nil,
-		OrgID:             "org-mock",
-		CreatedAt:         createdAt,
-		UpdatedAt:         now,
-		CreatedByUserID:   "user-1",
-		CreatedByUserName: "Test User",
-		UpdatedByUserID:   "user-1",
-		UpdatedByUserName: "Test User",
+		PlaybookID: playbookID,
+		Title:      req.Title,
+		Body:       req.Body,
+		AccessType: "org",
+		Macro:      nil,
+		OrgID:      "org-mock",
+		CreatedAt:  createdAt,
+		UpdatedAt:  now,
+		CreatedBy:  "user-1",
+		UpdatedBy:  "user-1",
 	}
 	globalMockStore.playbooks[playbookID] = pb
 	return pb
@@ -384,10 +376,12 @@ func CreateMockSecret(req CreateSecretRequest) *Secret {
 	id := fmt.Sprintf("secret-mock-%d", globalMockStore.secretSeq)
 
 	s := &Secret{
-		SecretID:  id,
-		Name:      req.Name,
-		CreatedAt: now,
-		UpdatedAt: now,
+		SecretID:    id,
+		Key:         req.Key,
+		SecretType:  req.Type,
+		IsSensitive: req.IsSensitive,
+		CreatedAt:   now,
+		UpdatedAt:   now,
 	}
 	globalMockStore.secrets[id] = s
 	return s
@@ -418,18 +412,24 @@ func CreateMockSchedule(req CreateScheduleRequest) *Schedule {
 	globalMockStore.mu.Lock()
 	defer globalMockStore.mu.Unlock()
 
-	now := float64(time.Now().Unix())
+	now := time.Now()
 	globalMockStore.scheduleSeq++
-	id := fmt.Sprintf("schedule-mock-%d", globalMockStore.scheduleSeq)
+	id := fmt.Sprintf("sched-mock-%d", globalMockStore.scheduleSeq)
+
+	var playbook *SchedulePlaybookInfo
+	if req.PlaybookID != "" {
+		playbook = &SchedulePlaybookInfo{PlaybookID: req.PlaybookID}
+	}
 
 	s := &Schedule{
-		ScheduleID: id,
-		Prompt:     req.Prompt,
-		Cron:       req.Cron,
-		PlaybookID: req.PlaybookID,
-		Status:     "active",
-		CreatedAt:  now,
-		UpdatedAt:  now,
+		ScheduledSessionID: id,
+		Name:               req.Name,
+		Prompt:             req.Prompt,
+		Frequency:          stringPtr(req.Frequency),
+		Playbook:           playbook,
+		Enabled:            true,
+		CreatedAt:          now.Format(time.RFC3339),
+		UpdatedAt:          now.Format(time.RFC3339),
 	}
 	globalMockStore.schedules[id] = s
 	return s
@@ -440,40 +440,49 @@ func UpdateMockSchedule(scheduleID string, req UpdateScheduleRequest) *Schedule 
 	globalMockStore.mu.Lock()
 	defer globalMockStore.mu.Unlock()
 
-	now := float64(time.Now().Unix())
+	now := time.Now()
 
 	existing, ok := globalMockStore.schedules[scheduleID]
 	if !ok {
 		existing = &Schedule{
-			ScheduleID: scheduleID,
-			Prompt:     "既存のプロンプト",
-			Cron:       "0 9 * * 1",
-			Status:     "active",
-			CreatedAt:  now - 86400,
+			ScheduledSessionID: scheduleID,
+			Name:               "既存のスケジュール",
+			Prompt:             "既存のプロンプト",
+			Frequency:          stringPtr("0 9 * * 1"),
+			Enabled:            true,
+			CreatedAt:          now.Add(-24 * time.Hour).Format(time.RFC3339),
 		}
 	}
 
 	schedule := &Schedule{
-		ScheduleID: scheduleID,
-		Prompt:     existing.Prompt,
-		Cron:       existing.Cron,
-		PlaybookID: existing.PlaybookID,
-		Status:     existing.Status,
-		CreatedAt:  existing.CreatedAt,
-		UpdatedAt:  now,
+		ScheduledSessionID: scheduleID,
+		Name:               existing.Name,
+		Prompt:             existing.Prompt,
+		Frequency:          existing.Frequency,
+		Playbook:           existing.Playbook,
+		Enabled:            existing.Enabled,
+		CreatedAt:          existing.CreatedAt,
+		UpdatedAt:          now.Format(time.RFC3339),
 	}
 
+	if req.Name != nil {
+		schedule.Name = *req.Name
+	}
 	if req.Prompt != nil {
 		schedule.Prompt = *req.Prompt
 	}
-	if req.Cron != nil {
-		schedule.Cron = *req.Cron
+	if req.Frequency != nil {
+		schedule.Frequency = req.Frequency
 	}
 	if req.PlaybookID != nil {
-		schedule.PlaybookID = *req.PlaybookID
+		if *req.PlaybookID == "" {
+			schedule.Playbook = nil
+		} else {
+			schedule.Playbook = &SchedulePlaybookInfo{PlaybookID: *req.PlaybookID}
+		}
 	}
-	if req.Status != nil {
-		schedule.Status = *req.Status
+	if req.Enabled != nil {
+		schedule.Enabled = *req.Enabled
 	}
 
 	globalMockStore.schedules[scheduleID] = schedule

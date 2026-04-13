@@ -14,11 +14,9 @@ provider "devin" {
 
 # Create a knowledge resource
 resource "devin_knowledge" "example" {
-  name       = "Sample Knowledge"
-  body       = "This is a sample knowledge created with Terraform"
-  trigger    = "This knowledge is triggered under specific conditions"
-  is_enabled = true
-  # folder_id   = "optional-folder-id"
+  name    = "Sample Knowledge"
+  body    = "This is a sample knowledge created with Terraform"
+  trigger = "This knowledge is triggered under specific conditions"
   # pinned_repo = "owner/repo"
 }
 
@@ -29,9 +27,8 @@ data "devin_knowledge" "example" {
 
 # Create a playbook
 resource "devin_playbook" "example" {
-  title  = "Sample Playbook"
-  body   = "Step-by-step instructions"
-  status = "active"
+  title = "Sample Playbook"
+  body  = "Step-by-step instructions"
 }
 
 # Create a secret
@@ -42,6 +39,7 @@ resource "devin_secret" "example" {
 
 # Create a schedule
 resource "devin_schedule" "example" {
+  name        = "Weekly Maintenance"
   prompt      = "Run weekly maintenance"
   cron        = "0 9 * * 1"
   playbook_id = devin_playbook.example.id

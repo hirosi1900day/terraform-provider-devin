@@ -15,15 +15,13 @@ provider "devin" {
 # ===================== Playbook Resources =====================
 
 resource "devin_playbook" "basic" {
-  title  = "Basic Playbook"
-  body   = "A simple playbook for code review automation"
-  status = "active"
+  title = "Basic Playbook"
+  body  = "A simple playbook for code review automation"
 }
 
 resource "devin_playbook" "inactive" {
-  title  = "Inactive Playbook"
-  body   = "This playbook is paused"
-  status = "inactive"
+  title = "Inactive Playbook"
+  body  = "This playbook is paused"
 }
 
 resource "devin_playbook" "default_status" {
@@ -39,16 +37,4 @@ output "basic_id" {
 
 output "basic_title" {
   value = devin_playbook.basic.title
-}
-
-output "basic_status" {
-  value = devin_playbook.basic.status
-}
-
-output "inactive_status" {
-  value = devin_playbook.inactive.status
-}
-
-output "default_status" {
-  value = devin_playbook.default_status.status
 }

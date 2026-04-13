@@ -33,9 +33,8 @@ import {
 }
 
 resource "devin_playbook" "imported_block" {
-  title  = "Mock Playbook"
-  body   = "This is a mock playbook for testing"
-  status = "active"
+  title = "Mock Playbook"
+  body  = "This is a mock playbook for testing"
 }
 
 # ===================== Schedule Import =====================
@@ -46,6 +45,7 @@ import {
 }
 
 resource "devin_schedule" "imported_block" {
+  name        = "Imported Schedule"
   prompt      = "Scheduled task prompt"
   cron        = "0 9 * * 1"
   playbook_id = "playbook-mock-1"
@@ -60,9 +60,8 @@ resource "devin_knowledge" "example" {
 }
 
 resource "devin_playbook" "example" {
-  title  = "Sample Playbook"
-  body   = "Playbook content for testing"
-  status = "active"
+  title = "Sample Playbook"
+  body  = "Playbook content for testing"
 }
 
 resource "devin_secret" "example" {
@@ -71,6 +70,7 @@ resource "devin_secret" "example" {
 }
 
 resource "devin_schedule" "example" {
+  name   = "Regular Schedule"
   prompt = "Regular schedule task"
   cron   = "0 12 * * *"
 }

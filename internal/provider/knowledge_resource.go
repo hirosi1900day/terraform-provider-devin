@@ -7,7 +7,6 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
-	"github.com/hashicorp/terraform-plugin-framework/resource/schema/booldefault"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/types"
@@ -70,18 +69,16 @@ func (r *KnowledgeResource) Schema(_ context.Context, _ resource.SchemaRequest, 
 				Required:    true,
 			},
 			"folder_id": schema.StringAttribute{
-				Description: "The ID of the parent folder",
-				Optional:    true,
+				Description: "The ID of the parent folder (read-only, managed via Devin UI)",
+				Computed:    true,
 			},
 			"pinned_repo": schema.StringAttribute{
 				Description: "Pinned repository (owner/repo format)",
 				Optional:    true,
 			},
 			"is_enabled": schema.BoolAttribute{
-				Description: "Whether the knowledge is enabled",
-				Optional:    true,
+				Description: "Whether the knowledge is enabled (read-only, managed via Devin UI)",
 				Computed:    true,
-				Default:     booldefault.StaticBool(true),
 			},
 			"folder_path": schema.StringAttribute{
 				Description: "The folder path (read-only)",
@@ -142,18 +139,9 @@ func (r *KnowledgeResource) Create(ctx context.Context, req resource.CreateReque
 		Trigger: plan.Trigger.ValueString(),
 	}
 
-	if !plan.FolderID.IsNull() && !plan.FolderID.IsUnknown() {
-		reqBody.FolderID = plan.FolderID.ValueString()
-	}
-
 	if !plan.PinnedRepo.IsNull() && !plan.PinnedRepo.IsUnknown() {
 		v := plan.PinnedRepo.ValueString()
 		reqBody.PinnedRepo = &v
-	}
-
-	if !plan.IsEnabled.IsNull() && !plan.IsEnabled.IsUnknown() {
-		v := plan.IsEnabled.ValueBool()
-		reqBody.IsEnabled = &v
 	}
 
 	note, err := r.client.CreateKnowledgeNote(reqBody)
@@ -231,18 +219,9 @@ func (r *KnowledgeResource) Update(ctx context.Context, req resource.UpdateReque
 		Trigger: plan.Trigger.ValueString(),
 	}
 
-	if !plan.FolderID.IsNull() && !plan.FolderID.IsUnknown() {
-		reqBody.FolderID = plan.FolderID.ValueString()
-	}
-
 	if !plan.PinnedRepo.IsNull() && !plan.PinnedRepo.IsUnknown() {
 		v := plan.PinnedRepo.ValueString()
 		reqBody.PinnedRepo = &v
-	}
-
-	if !plan.IsEnabled.IsNull() && !plan.IsEnabled.IsUnknown() {
-		v := plan.IsEnabled.ValueBool()
-		reqBody.IsEnabled = &v
 	}
 
 	note, err := r.client.UpdateKnowledgeNote(state.ID.ValueString(), reqBody)

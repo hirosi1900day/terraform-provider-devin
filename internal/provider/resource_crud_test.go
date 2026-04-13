@@ -11,12 +11,10 @@ func TestKnowledgeCRUDLifecycle(t *testing.T) {
 	client := NewClient("test_api_key", "org-mock")
 
 	// --- Create ---
-	isEnabled := true
 	created, err := client.CreateKnowledgeNote(CreateKnowledgeNoteRequest{
-		Name:      "テストナレッジ",
-		Body:      "テスト内容",
-		Trigger:   "テストトリガー",
-		IsEnabled: &isEnabled,
+		Name:    "テストナレッジ",
+		Body:    "テスト内容",
+		Trigger: "テストトリガー",
 	})
 	if err != nil {
 		t.Fatalf("Create failed: %v", err)
@@ -76,12 +74,10 @@ func TestKnowledgeCRUDLifecycle(t *testing.T) {
 	}
 
 	// --- Update ---
-	isEnabledFalse := false
 	updated, err := client.UpdateKnowledgeNote(noteID, UpdateKnowledgeNoteRequest{
-		Name:      "更新ナレッジ",
-		Body:      "更新内容",
-		Trigger:   "更新トリガー",
-		IsEnabled: &isEnabledFalse,
+		Name:    "更新ナレッジ",
+		Body:    "更新内容",
+		Trigger: "更新トリガー",
 	})
 	if err != nil {
 		t.Fatalf("Update failed: %v", err)
@@ -95,9 +91,6 @@ func TestKnowledgeCRUDLifecycle(t *testing.T) {
 	if updated.Body != "更新内容" {
 		t.Errorf("Updated Body = %q, want %q", updated.Body, "更新内容")
 	}
-	if updated.IsEnabled {
-		t.Error("Updated IsEnabled should be false")
-	}
 	if updated.CreatedAt == 0 {
 		t.Error("Updated CreatedAt should be preserved")
 	}
@@ -109,9 +102,6 @@ func TestKnowledgeCRUDLifecycle(t *testing.T) {
 	}
 	if readAfterUpdate.Name != "更新ナレッジ" {
 		t.Errorf("Read after update Name = %q, want %q", readAfterUpdate.Name, "更新ナレッジ")
-	}
-	if readAfterUpdate.IsEnabled {
-		t.Error("Read after update IsEnabled should be false")
 	}
 
 	// --- Delete ---
@@ -131,27 +121,18 @@ func TestKnowledgeCRUD_WithOptionalFields(t *testing.T) {
 	ResetMockStore()
 	client := NewClient("test_api_key", "org-mock")
 
-	isEnabled := false
 	repo := "owner/repo"
 	created, err := client.CreateKnowledgeNote(CreateKnowledgeNoteRequest{
 		Name:       "Optional Fields",
 		Body:       "Body content",
 		Trigger:    "Trigger text",
-		FolderID:   "folder-mock-1",
 		PinnedRepo: &repo,
-		IsEnabled:  &isEnabled,
 	})
 	if err != nil {
 		t.Fatalf("Create failed: %v", err)
 	}
-	if created.FolderID != "folder-mock-1" {
-		t.Errorf("FolderID = %q, want %q", created.FolderID, "folder-mock-1")
-	}
 	if created.PinnedRepo == nil || *created.PinnedRepo != "owner/repo" {
 		t.Errorf("PinnedRepo = %v, want %q", created.PinnedRepo, "owner/repo")
-	}
-	if created.IsEnabled {
-		t.Error("IsEnabled should be false")
 	}
 }
 
@@ -159,16 +140,15 @@ func TestKnowledgeCRUD_MultipleResources(t *testing.T) {
 	ResetMockStore()
 	client := NewClient("test_api_key", "org-mock")
 
-	isEnabled := true
 	_, err := client.CreateKnowledgeNote(CreateKnowledgeNoteRequest{
-		Name: "Note 1", Body: "Body 1", Trigger: "Trigger 1", IsEnabled: &isEnabled,
+		Name: "Note 1", Body: "Body 1", Trigger: "Trigger 1",
 	})
 	if err != nil {
 		t.Fatalf("Create 1 failed: %v", err)
 	}
 
 	_, err = client.CreateKnowledgeNote(CreateKnowledgeNoteRequest{
-		Name: "Note 2", Body: "Body 2", Trigger: "Trigger 2", IsEnabled: &isEnabled,
+		Name: "Note 2", Body: "Body 2", Trigger: "Trigger 2",
 	})
 	if err != nil {
 		t.Fatalf("Create 2 failed: %v", err)
@@ -191,9 +171,8 @@ func TestPlaybookCRUDLifecycle(t *testing.T) {
 
 	// --- Create ---
 	created, err := client.CreatePlaybook(CreatePlaybookRequest{
-		Title:  "テストPlaybook",
-		Body:   "Playbookの内容",
-		Status: "active",
+		Title: "テストPlaybook",
+		Body:  "Playbookの内容",
 	})
 	if err != nil {
 		t.Fatalf("Create failed: %v", err)
@@ -207,9 +186,6 @@ func TestPlaybookCRUDLifecycle(t *testing.T) {
 	if created.Body != "Playbookの内容" {
 		t.Errorf("Body = %q, want %q", created.Body, "Playbookの内容")
 	}
-	if created.Status != "active" {
-		t.Errorf("Status = %q, want %q", created.Status, "active")
-	}
 	if created.OrgID != "org-mock" {
 		t.Errorf("OrgID = %q, want %q", created.OrgID, "org-mock")
 	}
@@ -219,8 +195,8 @@ func TestPlaybookCRUDLifecycle(t *testing.T) {
 	if created.CreatedAt == 0 {
 		t.Error("CreatedAt should be set")
 	}
-	if created.CreatedByUserName != "Test User" {
-		t.Errorf("CreatedByUserName = %q, want %q", created.CreatedByUserName, "Test User")
+	if created.CreatedBy != "user-1" {
+		t.Errorf("CreatedBy = %q, want %q", created.CreatedBy, "user-1")
 	}
 	playbookID := created.PlaybookID
 
@@ -238,9 +214,8 @@ func TestPlaybookCRUDLifecycle(t *testing.T) {
 
 	// --- Update ---
 	updated, err := client.UpdatePlaybook(playbookID, UpdatePlaybookRequest{
-		Title:  "更新Playbook",
-		Body:   "更新内容",
-		Status: "inactive",
+		Title: "更新Playbook",
+		Body:  "更新内容",
 	})
 	if err != nil {
 		t.Fatalf("Update failed: %v", err)
@@ -254,9 +229,6 @@ func TestPlaybookCRUDLifecycle(t *testing.T) {
 	if updated.Body != "更新内容" {
 		t.Errorf("Updated Body = %q, want %q", updated.Body, "更新内容")
 	}
-	if updated.Status != "inactive" {
-		t.Errorf("Updated Status = %q, want %q", updated.Status, "inactive")
-	}
 
 	// --- Read after Update ---
 	readAfterUpdate, err := client.GetPlaybook(playbookID)
@@ -265,9 +237,6 @@ func TestPlaybookCRUDLifecycle(t *testing.T) {
 	}
 	if readAfterUpdate.Title != "更新Playbook" {
 		t.Errorf("Read after update Title = %q, want %q", readAfterUpdate.Title, "更新Playbook")
-	}
-	if readAfterUpdate.Status != "inactive" {
-		t.Errorf("Read after update Status = %q, want %q", readAfterUpdate.Status, "inactive")
 	}
 
 	// --- Delete ---
@@ -291,8 +260,10 @@ func TestSecretCreateDeleteLifecycle(t *testing.T) {
 
 	// --- Create ---
 	created, err := client.CreateSecret(CreateSecretRequest{
-		Name:  "TEST_SECRET",
-		Value: "secret-value-123",
+		Key:         "TEST_SECRET",
+		Type:        "key-value",
+		Value:       "secret-value-123",
+		IsSensitive: true,
 	})
 	if err != nil {
 		t.Fatalf("Create failed: %v", err)
@@ -300,8 +271,8 @@ func TestSecretCreateDeleteLifecycle(t *testing.T) {
 	if created.SecretID == "" {
 		t.Fatal("Created secret has empty ID")
 	}
-	if created.Name != "TEST_SECRET" {
-		t.Errorf("Name = %q, want %q", created.Name, "TEST_SECRET")
+	if created.Key != "TEST_SECRET" {
+		t.Errorf("Key = %q, want %q", created.Key, "TEST_SECRET")
 	}
 	if created.CreatedAt == 0 {
 		t.Error("CreatedAt should be set")
@@ -316,8 +287,8 @@ func TestSecretCreateDeleteLifecycle(t *testing.T) {
 	if read.SecretID != secretID {
 		t.Errorf("Read ID = %q, want %q", read.SecretID, secretID)
 	}
-	if read.Name != "TEST_SECRET" {
-		t.Errorf("Read Name = %q, want %q", read.Name, "TEST_SECRET")
+	if read.Key != "TEST_SECRET" {
+		t.Errorf("Read Key = %q, want %q", read.Key, "TEST_SECRET")
 	}
 
 	// --- Read via List ---
@@ -353,11 +324,11 @@ func TestSecretCreateMultiple(t *testing.T) {
 	ResetMockStore()
 	client := NewClient("test_api_key", "org-mock")
 
-	_, err := client.CreateSecret(CreateSecretRequest{Name: "SECRET_A", Value: "aaa"})
+	_, err := client.CreateSecret(CreateSecretRequest{Key: "SECRET_A", Type: "key-value", Value: "aaa", IsSensitive: true})
 	if err != nil {
 		t.Fatalf("Create A failed: %v", err)
 	}
-	_, err = client.CreateSecret(CreateSecretRequest{Name: "SECRET_B", Value: "bbb"})
+	_, err = client.CreateSecret(CreateSecretRequest{Key: "SECRET_B", Type: "key-value", Value: "bbb", IsSensitive: true})
 	if err != nil {
 		t.Fatalf("Create B failed: %v", err)
 	}
@@ -379,36 +350,37 @@ func TestScheduleCRUDLifecycle(t *testing.T) {
 
 	// --- Create ---
 	created, err := client.CreateSchedule(CreateScheduleRequest{
-		Prompt: "テストプロンプト",
-		Cron:   "0 9 * * 1",
+		Name:      "テストスケジュール",
+		Prompt:    "テストプロンプト",
+		Frequency: "0 9 * * 1",
 	})
 	if err != nil {
 		t.Fatalf("Create failed: %v", err)
 	}
-	if created.ScheduleID == "" {
+	if created.ScheduledSessionID == "" {
 		t.Fatal("Created schedule has empty ID")
 	}
 	if created.Prompt != "テストプロンプト" {
 		t.Errorf("Prompt = %q, want %q", created.Prompt, "テストプロンプト")
 	}
-	if created.Cron != "0 9 * * 1" {
-		t.Errorf("Cron = %q, want %q", created.Cron, "0 9 * * 1")
+	if *created.Frequency != "0 9 * * 1" {
+		t.Errorf("Frequency = %q, want %q", *created.Frequency, "0 9 * * 1")
 	}
-	if created.Status != "active" {
-		t.Errorf("Status = %q, want %q", created.Status, "active")
+	if !created.Enabled {
+		t.Error("Enabled should be true")
 	}
-	if created.CreatedAt == 0 {
+	if created.CreatedAt == "" {
 		t.Error("CreatedAt should be set")
 	}
-	scheduleID := created.ScheduleID
+	scheduleID := created.ScheduledSessionID
 
 	// --- Read ---
 	read, err := client.GetSchedule(scheduleID)
 	if err != nil {
 		t.Fatalf("Read failed: %v", err)
 	}
-	if read.ScheduleID != scheduleID {
-		t.Errorf("Read ID = %q, want %q", read.ScheduleID, scheduleID)
+	if read.ScheduledSessionID != scheduleID {
+		t.Errorf("Read ID = %q, want %q", read.ScheduledSessionID, scheduleID)
 	}
 	if read.Prompt != "テストプロンプト" {
 		t.Errorf("Read Prompt = %q, want %q", read.Prompt, "テストプロンプト")
@@ -416,22 +388,22 @@ func TestScheduleCRUDLifecycle(t *testing.T) {
 
 	// --- Update (PATCH) ---
 	newPrompt := "更新プロンプト"
-	newCron := "0 10 * * *"
+	newFrequency := "0 10 * * *"
 	updated, err := client.UpdateSchedule(scheduleID, UpdateScheduleRequest{
-		Prompt: &newPrompt,
-		Cron:   &newCron,
+		Prompt:    &newPrompt,
+		Frequency: &newFrequency,
 	})
 	if err != nil {
 		t.Fatalf("Update failed: %v", err)
 	}
-	if updated.ScheduleID != scheduleID {
-		t.Errorf("Updated ID = %q, want %q", updated.ScheduleID, scheduleID)
+	if updated.ScheduledSessionID != scheduleID {
+		t.Errorf("Updated ID = %q, want %q", updated.ScheduledSessionID, scheduleID)
 	}
 	if updated.Prompt != "更新プロンプト" {
 		t.Errorf("Updated Prompt = %q, want %q", updated.Prompt, "更新プロンプト")
 	}
-	if updated.Cron != "0 10 * * *" {
-		t.Errorf("Updated Cron = %q, want %q", updated.Cron, "0 10 * * *")
+	if *updated.Frequency != "0 10 * * *" {
+		t.Errorf("Updated Frequency = %q, want %q", *updated.Frequency, "0 10 * * *")
 	}
 
 	// --- Read after Update ---
@@ -442,8 +414,8 @@ func TestScheduleCRUDLifecycle(t *testing.T) {
 	if readAfterUpdate.Prompt != "更新プロンプト" {
 		t.Errorf("Read after update Prompt = %q, want %q", readAfterUpdate.Prompt, "更新プロンプト")
 	}
-	if readAfterUpdate.Cron != "0 10 * * *" {
-		t.Errorf("Read after update Cron = %q, want %q", readAfterUpdate.Cron, "0 10 * * *")
+	if *readAfterUpdate.Frequency != "0 10 * * *" {
+		t.Errorf("Read after update Frequency = %q, want %q", *readAfterUpdate.Frequency, "0 10 * * *")
 	}
 
 	// --- Delete ---
@@ -465,9 +437,8 @@ func TestScheduleCRUD_WithPlaybook(t *testing.T) {
 
 	// Create a playbook first
 	pb, err := client.CreatePlaybook(CreatePlaybookRequest{
-		Title:  "Linked Playbook",
-		Body:   "Body",
-		Status: "active",
+		Title: "Linked Playbook",
+		Body:  "Body",
 	})
 	if err != nil {
 		t.Fatalf("CreatePlaybook failed: %v", err)
@@ -475,36 +446,37 @@ func TestScheduleCRUD_WithPlaybook(t *testing.T) {
 
 	// Create schedule with playbook_id
 	created, err := client.CreateSchedule(CreateScheduleRequest{
+		Name:       "Playbook付きスケジュール",
 		Prompt:     "Playbook付きスケジュール",
-		Cron:       "0 9 * * 1",
+		Frequency:  "0 9 * * 1",
 		PlaybookID: pb.PlaybookID,
 	})
 	if err != nil {
 		t.Fatalf("Create schedule failed: %v", err)
 	}
-	if created.PlaybookID != pb.PlaybookID {
-		t.Errorf("PlaybookID = %q, want %q", created.PlaybookID, pb.PlaybookID)
+	if created.Playbook == nil || created.Playbook.PlaybookID != pb.PlaybookID {
+		t.Errorf("PlaybookID mismatch")
 	}
 
 	// Read and verify
-	read, err := client.GetSchedule(created.ScheduleID)
+	read, err := client.GetSchedule(created.ScheduledSessionID)
 	if err != nil {
 		t.Fatalf("Read failed: %v", err)
 	}
-	if read.PlaybookID != pb.PlaybookID {
-		t.Errorf("Read PlaybookID = %q, want %q", read.PlaybookID, pb.PlaybookID)
+	if read.Playbook == nil || read.Playbook.PlaybookID != pb.PlaybookID {
+		t.Errorf("Read PlaybookID mismatch")
 	}
 
 	// Update: remove playbook_id via PATCH
 	newPlaybookID := ""
-	updated, err := client.UpdateSchedule(created.ScheduleID, UpdateScheduleRequest{
+	updated, err := client.UpdateSchedule(created.ScheduledSessionID, UpdateScheduleRequest{
 		PlaybookID: &newPlaybookID,
 	})
 	if err != nil {
 		t.Fatalf("Update failed: %v", err)
 	}
-	if updated.PlaybookID != "" {
-		t.Errorf("Updated PlaybookID = %q, want empty", updated.PlaybookID)
+	if updated.Playbook != nil {
+		t.Errorf("Updated Playbook should be nil")
 	}
 }
 
@@ -513,8 +485,9 @@ func TestScheduleCRUD_PartialUpdate(t *testing.T) {
 	client := NewClient("test_api_key", "org-mock")
 
 	created, err := client.CreateSchedule(CreateScheduleRequest{
-		Prompt: "Original Prompt",
-		Cron:   "0 9 * * 1",
+		Name:      "Partial Update Test",
+		Prompt:    "Original Prompt",
+		Frequency: "0 9 * * 1",
 	})
 	if err != nil {
 		t.Fatalf("Create failed: %v", err)
@@ -522,7 +495,7 @@ func TestScheduleCRUD_PartialUpdate(t *testing.T) {
 
 	// Only update prompt, cron should remain unchanged
 	newPrompt := "Updated Prompt Only"
-	updated, err := client.UpdateSchedule(created.ScheduleID, UpdateScheduleRequest{
+	updated, err := client.UpdateSchedule(created.ScheduledSessionID, UpdateScheduleRequest{
 		Prompt: &newPrompt,
 	})
 	if err != nil {
@@ -531,8 +504,8 @@ func TestScheduleCRUD_PartialUpdate(t *testing.T) {
 	if updated.Prompt != "Updated Prompt Only" {
 		t.Errorf("Prompt = %q, want %q", updated.Prompt, "Updated Prompt Only")
 	}
-	if updated.Cron != "0 9 * * 1" {
-		t.Errorf("Cron should be unchanged: got %q, want %q", updated.Cron, "0 9 * * 1")
+	if *updated.Frequency != "0 9 * * 1" {
+		t.Errorf("Frequency should be unchanged: got %q, want %q", *updated.Frequency, "0 9 * * 1")
 	}
 }
 
@@ -609,9 +582,8 @@ func TestKnowledgeCache_CreateInvalidates(t *testing.T) {
 	ResetMockStore()
 	client := NewClient("test_api_key", "org-mock")
 
-	isEnabled := true
 	created, err := client.CreateKnowledgeNote(CreateKnowledgeNoteRequest{
-		Name: "Cached", Body: "Body", Trigger: "Trigger", IsEnabled: &isEnabled,
+		Name: "Cached", Body: "Body", Trigger: "Trigger",
 	})
 	if err != nil {
 		t.Fatalf("Create failed: %v", err)
@@ -628,9 +600,8 @@ func TestKnowledgeCache_DeleteInvalidates(t *testing.T) {
 	ResetMockStore()
 	client := NewClient("test_api_key", "org-mock")
 
-	isEnabled := true
 	created, err := client.CreateKnowledgeNote(CreateKnowledgeNoteRequest{
-		Name: "ToDelete", Body: "Body", Trigger: "Trigger", IsEnabled: &isEnabled,
+		Name: "ToDelete", Body: "Body", Trigger: "Trigger",
 	})
 	if err != nil {
 		t.Fatalf("Create failed: %v", err)
@@ -653,30 +624,29 @@ func TestMockStoreIsolation(t *testing.T) {
 	ResetMockStore()
 	client := NewClient("test_api_key", "org-mock")
 
-	isEnabled := true
 	_, err := client.CreateKnowledgeNote(CreateKnowledgeNoteRequest{
-		Name: "Note", Body: "B", Trigger: "T", IsEnabled: &isEnabled,
+		Name: "Note", Body: "B", Trigger: "T",
 	})
 	if err != nil {
 		t.Fatalf("Create knowledge failed: %v", err)
 	}
 
 	_, err = client.CreatePlaybook(CreatePlaybookRequest{
-		Title: "PB", Body: "B", Status: "active",
+		Title: "PB", Body: "B",
 	})
 	if err != nil {
 		t.Fatalf("Create playbook failed: %v", err)
 	}
 
 	_, err = client.CreateSecret(CreateSecretRequest{
-		Name: "SEC", Value: "val",
+		Key: "SEC", Type: "key-value", Value: "val", IsSensitive: true,
 	})
 	if err != nil {
 		t.Fatalf("Create secret failed: %v", err)
 	}
 
 	_, err = client.CreateSchedule(CreateScheduleRequest{
-		Prompt: "P", Cron: "0 * * * *",
+		Name: "Sched", Prompt: "P", Frequency: "0 * * * *",
 	})
 	if err != nil {
 		t.Fatalf("Create schedule failed: %v", err)

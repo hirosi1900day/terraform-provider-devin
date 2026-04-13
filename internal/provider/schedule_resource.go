@@ -20,13 +20,14 @@ type ScheduleResource struct {
 
 // ScheduleResourceModel represents the schema structure for the Terraform resource
 type ScheduleResourceModel struct {
-	ID         types.String  `tfsdk:"id"`
-	Prompt     types.String  `tfsdk:"prompt"`
-	Cron       types.String  `tfsdk:"cron"`
-	PlaybookID types.String  `tfsdk:"playbook_id"`
-	Status     types.String  `tfsdk:"status"`
-	CreatedAt  types.Float64 `tfsdk:"created_at"`
-	UpdatedAt  types.Float64 `tfsdk:"updated_at"`
+	ID         types.String `tfsdk:"id"`
+	Name       types.String `tfsdk:"name"`
+	Prompt     types.String `tfsdk:"prompt"`
+	Cron       types.String `tfsdk:"cron"`
+	PlaybookID types.String `tfsdk:"playbook_id"`
+	Enabled    types.Bool   `tfsdk:"enabled"`
+	CreatedAt  types.String `tfsdk:"created_at"`
+	UpdatedAt  types.String `tfsdk:"updated_at"`
 }
 
 // NewScheduleResource creates an instance of the schedule resource
@@ -45,34 +46,38 @@ func (r *ScheduleResource) Schema(_ context.Context, _ resource.SchemaRequest, r
 		Description: "Manages schedule resources in Devin API v3",
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
-				Description: "The schedule_id of the schedule resource",
+				Description: "The scheduled_session_id of the schedule resource",
 				Computed:    true,
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.UseStateForUnknown(),
 				},
+			},
+			"name": schema.StringAttribute{
+				Description: "The name of the schedule",
+				Required:    true,
 			},
 			"prompt": schema.StringAttribute{
 				Description: "The prompt for the scheduled task",
 				Required:    true,
 			},
 			"cron": schema.StringAttribute{
-				Description: "Cron expression for the schedule",
+				Description: "Cron expression for the schedule (maps to API 'frequency' field)",
 				Required:    true,
 			},
 			"playbook_id": schema.StringAttribute{
 				Description: "The ID of the playbook to use",
 				Optional:    true,
 			},
-			"status": schema.StringAttribute{
-				Description: "The status of the schedule",
+			"enabled": schema.BoolAttribute{
+				Description: "Whether the schedule is enabled (read-only)",
 				Computed:    true,
 			},
-			"created_at": schema.Float64Attribute{
-				Description: "Creation timestamp (UNIX)",
+			"created_at": schema.StringAttribute{
+				Description: "Creation timestamp (ISO 8601)",
 				Computed:    true,
 			},
-			"updated_at": schema.Float64Attribute{
-				Description: "Last update timestamp (UNIX)",
+			"updated_at": schema.StringAttribute{
+				Description: "Last update timestamp (ISO 8601)",
 				Computed:    true,
 			},
 		},
@@ -109,8 +114,9 @@ func (r *ScheduleResource) Create(ctx context.Context, req resource.CreateReques
 	tflog.Info(ctx, "Starting schedule resource creation")
 
 	reqBody := CreateScheduleRequest{
-		Prompt: plan.Prompt.ValueString(),
-		Cron:   plan.Cron.ValueString(),
+		Name:      plan.Name.ValueString(),
+		Prompt:    plan.Prompt.ValueString(),
+		Frequency: plan.Cron.ValueString(),
 	}
 
 	if !plan.PlaybookID.IsNull() && !plan.PlaybookID.IsUnknown() {
@@ -132,7 +138,7 @@ func (r *ScheduleResource) Create(ctx context.Context, req resource.CreateReques
 	resp.Diagnostics.Append(diags...)
 
 	tflog.Info(ctx, "Schedule resource creation completed", map[string]interface{}{
-		"id": schedule.ScheduleID,
+		"id": schedule.ScheduledSessionID,
 	})
 }
 
@@ -188,11 +194,14 @@ func (r *ScheduleResource) Update(ctx context.Context, req resource.UpdateReques
 
 	reqBody := UpdateScheduleRequest{}
 
+	name := plan.Name.ValueString()
+	reqBody.Name = &name
+
 	prompt := plan.Prompt.ValueString()
 	reqBody.Prompt = &prompt
 
 	cron := plan.Cron.ValueString()
-	reqBody.Cron = &cron
+	reqBody.Frequency = &cron
 
 	if !plan.PlaybookID.IsNull() && !plan.PlaybookID.IsUnknown() {
 		v := plan.PlaybookID.ValueString()
@@ -248,15 +257,21 @@ func (r *ScheduleResource) ImportState(ctx context.Context, req resource.ImportS
 
 // mapScheduleToModel maps a Schedule API response to the Terraform model
 func mapScheduleToModel(schedule *Schedule, model *ScheduleResourceModel) {
-	model.ID = types.StringValue(schedule.ScheduleID)
+	model.ID = types.StringValue(schedule.ScheduledSessionID)
+	model.Name = types.StringValue(schedule.Name)
 	model.Prompt = types.StringValue(schedule.Prompt)
-	model.Cron = types.StringValue(schedule.Cron)
-	model.Status = types.StringValue(schedule.Status)
-	model.CreatedAt = types.Float64Value(schedule.CreatedAt)
-	model.UpdatedAt = types.Float64Value(schedule.UpdatedAt)
+	model.Enabled = types.BoolValue(schedule.Enabled)
+	model.CreatedAt = types.StringValue(schedule.CreatedAt)
+	model.UpdatedAt = types.StringValue(schedule.UpdatedAt)
 
-	if schedule.PlaybookID != "" {
-		model.PlaybookID = types.StringValue(schedule.PlaybookID)
+	if schedule.Frequency != nil {
+		model.Cron = types.StringValue(*schedule.Frequency)
+	} else {
+		model.Cron = types.StringValue("")
+	}
+
+	if schedule.Playbook != nil && schedule.Playbook.PlaybookID != "" {
+		model.PlaybookID = types.StringValue(schedule.Playbook.PlaybookID)
 	} else {
 		model.PlaybookID = types.StringNull()
 	}

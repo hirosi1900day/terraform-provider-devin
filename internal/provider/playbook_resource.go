@@ -8,7 +8,6 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
-	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringdefault"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
@@ -21,19 +20,16 @@ type PlaybookResource struct {
 
 // PlaybookResourceModel represents the schema structure for the Terraform resource
 type PlaybookResourceModel struct {
-	ID                types.String  `tfsdk:"id"`
-	Title             types.String  `tfsdk:"title"`
-	Body              types.String  `tfsdk:"body"`
-	Status            types.String  `tfsdk:"status"`
-	AccessType        types.String  `tfsdk:"access_type"`
-	Macro             types.String  `tfsdk:"macro"`
-	OrgID             types.String  `tfsdk:"org_id"`
-	CreatedAt         types.Float64 `tfsdk:"created_at"`
-	UpdatedAt         types.Float64 `tfsdk:"updated_at"`
-	CreatedByUserID   types.String  `tfsdk:"created_by_user_id"`
-	CreatedByUserName types.String  `tfsdk:"created_by_user_name"`
-	UpdatedByUserID   types.String  `tfsdk:"updated_by_user_id"`
-	UpdatedByUserName types.String  `tfsdk:"updated_by_user_name"`
+	ID         types.String  `tfsdk:"id"`
+	Title      types.String  `tfsdk:"title"`
+	Body       types.String  `tfsdk:"body"`
+	AccessType types.String  `tfsdk:"access_type"`
+	Macro      types.String  `tfsdk:"macro"`
+	OrgID      types.String  `tfsdk:"org_id"`
+	CreatedAt  types.Float64 `tfsdk:"created_at"`
+	UpdatedAt  types.Float64 `tfsdk:"updated_at"`
+	CreatedBy  types.String  `tfsdk:"created_by"`
+	UpdatedBy  types.String  `tfsdk:"updated_by"`
 }
 
 // NewPlaybookResource creates an instance of the playbook resource
@@ -66,12 +62,6 @@ func (r *PlaybookResource) Schema(_ context.Context, _ resource.SchemaRequest, r
 				Description: "The body content of the playbook",
 				Required:    true,
 			},
-			"status": schema.StringAttribute{
-				Description: "The status of the playbook (active/inactive)",
-				Optional:    true,
-				Computed:    true,
-				Default:     stringdefault.StaticString("active"),
-			},
 			"access_type": schema.StringAttribute{
 				Description: "Access type (read-only)",
 				Computed:    true,
@@ -92,20 +82,12 @@ func (r *PlaybookResource) Schema(_ context.Context, _ resource.SchemaRequest, r
 				Description: "Last update timestamp (UNIX)",
 				Computed:    true,
 			},
-			"created_by_user_id": schema.StringAttribute{
-				Description: "User ID of the creator (read-only)",
+			"created_by": schema.StringAttribute{
+				Description: "Creator identifier (read-only)",
 				Computed:    true,
 			},
-			"created_by_user_name": schema.StringAttribute{
-				Description: "User name of the creator (read-only)",
-				Computed:    true,
-			},
-			"updated_by_user_id": schema.StringAttribute{
-				Description: "User ID of the last updater (read-only)",
-				Computed:    true,
-			},
-			"updated_by_user_name": schema.StringAttribute{
-				Description: "User name of the last updater (read-only)",
+			"updated_by": schema.StringAttribute{
+				Description: "Last updater identifier (read-only)",
 				Computed:    true,
 			},
 		},
@@ -144,10 +126,6 @@ func (r *PlaybookResource) Create(ctx context.Context, req resource.CreateReques
 	reqBody := CreatePlaybookRequest{
 		Title: plan.Title.ValueString(),
 		Body:  plan.Body.ValueString(),
-	}
-
-	if !plan.Status.IsNull() && !plan.Status.IsUnknown() {
-		reqBody.Status = plan.Status.ValueString()
 	}
 
 	playbook, err := r.client.CreatePlaybook(reqBody)
@@ -224,10 +202,6 @@ func (r *PlaybookResource) Update(ctx context.Context, req resource.UpdateReques
 		Body:  plan.Body.ValueString(),
 	}
 
-	if !plan.Status.IsNull() && !plan.Status.IsUnknown() {
-		reqBody.Status = plan.Status.ValueString()
-	}
-
 	playbook, err := r.client.UpdatePlaybook(state.ID.ValueString(), reqBody)
 	if err != nil {
 		resp.Diagnostics.AddError(
@@ -280,15 +254,12 @@ func mapPlaybookToModel(playbook *Playbook, model *PlaybookResourceModel) {
 	model.ID = types.StringValue(playbook.PlaybookID)
 	model.Title = types.StringValue(playbook.Title)
 	model.Body = types.StringValue(playbook.Body)
-	model.Status = types.StringValue(playbook.Status)
 	model.AccessType = types.StringValue(playbook.AccessType)
 	model.OrgID = types.StringValue(playbook.OrgID)
 	model.CreatedAt = types.Float64Value(playbook.CreatedAt)
 	model.UpdatedAt = types.Float64Value(playbook.UpdatedAt)
-	model.CreatedByUserID = types.StringValue(playbook.CreatedByUserID)
-	model.CreatedByUserName = types.StringValue(playbook.CreatedByUserName)
-	model.UpdatedByUserID = types.StringValue(playbook.UpdatedByUserID)
-	model.UpdatedByUserName = types.StringValue(playbook.UpdatedByUserName)
+	model.CreatedBy = types.StringValue(playbook.CreatedBy)
+	model.UpdatedBy = types.StringValue(playbook.UpdatedBy)
 
 	if playbook.Macro != nil {
 		model.Macro = types.StringValue(*playbook.Macro)

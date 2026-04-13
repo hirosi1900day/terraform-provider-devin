@@ -105,8 +105,10 @@ func (r *SecretResource) Create(ctx context.Context, req resource.CreateRequest,
 	tflog.Info(ctx, "Starting secret resource creation")
 
 	reqBody := CreateSecretRequest{
-		Name:  plan.Name.ValueString(),
-		Value: plan.Value.ValueString(),
+		Key:         plan.Name.ValueString(),
+		Type:        "key-value",
+		Value:       plan.Value.ValueString(),
+		IsSensitive: true,
 	}
 
 	secret, err := r.client.CreateSecret(reqBody)
@@ -152,7 +154,7 @@ func (r *SecretResource) Read(ctx context.Context, req resource.ReadRequest, res
 		return
 	}
 
-	state.Name = types.StringValue(secret.Name)
+	state.Name = types.StringValue(secret.Key)
 	state.CreatedAt = types.Float64Value(secret.CreatedAt)
 	state.UpdatedAt = types.Float64Value(secret.UpdatedAt)
 	// value is write-only, keep the existing state value

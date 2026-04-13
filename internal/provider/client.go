@@ -57,9 +57,9 @@ type KnowledgeNote struct {
 
 // ListKnowledgeNotesResponse represents the paginated response from v3 knowledge notes API
 type ListKnowledgeNotesResponse struct {
-	Notes   []KnowledgeNote `json:"notes"`
-	HasMore bool            `json:"has_more"`
-	After   string          `json:"after,omitempty"`
+	Items       []KnowledgeNote `json:"items"`
+	EndCursor   *string         `json:"end_cursor"`
+	HasNextPage bool            `json:"has_next_page"`
 }
 
 // CreateKnowledgeNoteRequest represents the request for creating a knowledge note
@@ -67,9 +67,7 @@ type CreateKnowledgeNoteRequest struct {
 	Name       string  `json:"name"`
 	Body       string  `json:"body"`
 	Trigger    string  `json:"trigger"`
-	FolderID   string  `json:"folder_id,omitempty"`
 	PinnedRepo *string `json:"pinned_repo,omitempty"`
-	IsEnabled  *bool   `json:"is_enabled,omitempty"`
 }
 
 // UpdateKnowledgeNoteRequest represents the request for updating a knowledge note
@@ -77,9 +75,7 @@ type UpdateKnowledgeNoteRequest struct {
 	Name       string  `json:"name"`
 	Body       string  `json:"body"`
 	Trigger    string  `json:"trigger"`
-	FolderID   string  `json:"folder_id,omitempty"`
 	PinnedRepo *string `json:"pinned_repo,omitempty"`
-	IsEnabled  *bool   `json:"is_enabled,omitempty"`
 }
 
 // --- Folder types (v3) ---
@@ -95,107 +91,124 @@ type FolderItem struct {
 
 // ListFoldersResponse represents the response from v3 folders API
 type ListFoldersResponse struct {
-	Folders []FolderItem `json:"folders"`
-	HasMore bool         `json:"has_more"`
-	After   string       `json:"after,omitempty"`
+	Items       []FolderItem `json:"items"`
+	EndCursor   *string      `json:"end_cursor"`
+	HasNextPage bool         `json:"has_next_page"`
 }
 
 // --- Playbook types (v3) ---
 
 // Playbook represents a v3 playbook
 type Playbook struct {
-	PlaybookID        string  `json:"playbook_id"`
-	Title             string  `json:"title"`
-	Body              string  `json:"body"`
-	Status            string  `json:"status"`
-	AccessType        string  `json:"access_type,omitempty"`
-	Macro             *string `json:"macro"`
-	OrgID             string  `json:"org_id,omitempty"`
-	CreatedAt         float64 `json:"created_at"`
-	UpdatedAt         float64 `json:"updated_at"`
-	CreatedByUserID   string  `json:"created_by_user_id,omitempty"`
-	CreatedByUserName string  `json:"created_by_user_name,omitempty"`
-	UpdatedByUserID   string  `json:"updated_by_user_id,omitempty"`
-	UpdatedByUserName string  `json:"updated_by_user_name,omitempty"`
+	PlaybookID string  `json:"playbook_id"`
+	Title      string  `json:"title"`
+	Body       string  `json:"body"`
+	AccessType string  `json:"access_type,omitempty"`
+	Macro      *string `json:"macro"`
+	OrgID      string  `json:"org_id,omitempty"`
+	CreatedAt  float64 `json:"created_at"`
+	UpdatedAt  float64 `json:"updated_at"`
+	CreatedBy  string  `json:"created_by,omitempty"`
+	UpdatedBy  string  `json:"updated_by,omitempty"`
 }
 
 // ListPlaybooksResponse represents the paginated response from playbooks API
 type ListPlaybooksResponse struct {
-	Playbooks []Playbook `json:"playbooks"`
-	HasMore   bool       `json:"has_more"`
-	After     string     `json:"after,omitempty"`
+	Items       []Playbook `json:"items"`
+	EndCursor   *string    `json:"end_cursor"`
+	HasNextPage bool       `json:"has_next_page"`
 }
 
 // CreatePlaybookRequest represents the request for creating a playbook
 type CreatePlaybookRequest struct {
-	Title  string `json:"title"`
-	Body   string `json:"body"`
-	Status string `json:"status,omitempty"`
+	Title string  `json:"title"`
+	Body  string  `json:"body"`
+	Macro *string `json:"macro,omitempty"`
 }
 
 // UpdatePlaybookRequest represents the request for updating a playbook
 type UpdatePlaybookRequest struct {
-	Title  string `json:"title"`
-	Body   string `json:"body"`
-	Status string `json:"status,omitempty"`
+	Title string  `json:"title"`
+	Body  string  `json:"body"`
+	Macro *string `json:"macro,omitempty"`
 }
 
 // --- Secret types (v3) ---
 
 // Secret represents a v3 secret (read response - value is never returned)
 type Secret struct {
-	SecretID  string  `json:"secret_id"`
-	Name      string  `json:"name"`
-	CreatedAt float64 `json:"created_at"`
-	UpdatedAt float64 `json:"updated_at"`
+	SecretID    string  `json:"secret_id"`
+	Key         string  `json:"key"`
+	SecretType  string  `json:"secret_type,omitempty"`
+	IsSensitive bool    `json:"is_sensitive"`
+	Note        string  `json:"note,omitempty"`
+	AccessType  string  `json:"access_type,omitempty"`
+	CreatedAt   float64 `json:"created_at"`
+	UpdatedAt   float64 `json:"updated_at"`
+	CreatedBy   string  `json:"created_by,omitempty"`
+	UpdatedBy   string  `json:"updated_by,omitempty"`
 }
 
 // ListSecretsResponse represents the response from secrets API
 type ListSecretsResponse struct {
-	Secrets []Secret `json:"secrets"`
-	HasMore bool     `json:"has_more"`
-	After   string   `json:"after,omitempty"`
+	Items       []Secret `json:"items"`
+	EndCursor   *string  `json:"end_cursor"`
+	HasNextPage bool     `json:"has_next_page"`
 }
 
 // CreateSecretRequest represents the request for creating a secret
 type CreateSecretRequest struct {
-	Name  string `json:"name"`
-	Value string `json:"value"`
+	Key         string `json:"key"`
+	Type        string `json:"type"`
+	Value       string `json:"value"`
+	IsSensitive bool   `json:"is_sensitive"`
+	Note        string `json:"note,omitempty"`
 }
 
 // --- Schedule types (v3) ---
 
+// SchedulePlaybookInfo represents the nested playbook info in a schedule response
+type SchedulePlaybookInfo struct {
+	PlaybookID string `json:"playbook_id"`
+	Title      string `json:"title"`
+}
+
 // Schedule represents a v3 schedule
 type Schedule struct {
-	ScheduleID string  `json:"schedule_id"`
-	Prompt     string  `json:"prompt"`
-	Cron       string  `json:"cron"`
-	PlaybookID string  `json:"playbook_id,omitempty"`
-	Status     string  `json:"status,omitempty"`
-	CreatedAt  float64 `json:"created_at"`
-	UpdatedAt  float64 `json:"updated_at"`
+	ScheduledSessionID string                `json:"scheduled_session_id"`
+	Name               string                `json:"name"`
+	Prompt             string                `json:"prompt"`
+	Frequency          *string               `json:"frequency"`
+	Enabled            bool                  `json:"enabled"`
+	Playbook           *SchedulePlaybookInfo `json:"playbook"`
+	Agent              string                `json:"agent,omitempty"`
+	OrgID              string                `json:"org_id,omitempty"`
+	CreatedAt          string                `json:"created_at"`
+	UpdatedAt          string                `json:"updated_at"`
 }
 
 // ListSchedulesResponse represents the response from schedules API
 type ListSchedulesResponse struct {
-	Schedules []Schedule `json:"schedules"`
-	HasMore   bool       `json:"has_more"`
-	After     string     `json:"after,omitempty"`
+	Items       []Schedule `json:"items"`
+	EndCursor   *string    `json:"end_cursor"`
+	HasNextPage bool       `json:"has_next_page"`
 }
 
 // CreateScheduleRequest represents the request for creating a schedule
 type CreateScheduleRequest struct {
+	Name       string `json:"name"`
 	Prompt     string `json:"prompt"`
-	Cron       string `json:"cron"`
+	Frequency  string `json:"frequency,omitempty"`
 	PlaybookID string `json:"playbook_id,omitempty"`
 }
 
 // UpdateScheduleRequest represents the request for updating a schedule (PATCH)
 type UpdateScheduleRequest struct {
+	Name       *string `json:"name,omitempty"`
 	Prompt     *string `json:"prompt,omitempty"`
-	Cron       *string `json:"cron,omitempty"`
+	Frequency  *string `json:"frequency,omitempty"`
 	PlaybookID *string `json:"playbook_id,omitempty"`
-	Status     *string `json:"status,omitempty"`
+	Enabled    *bool   `json:"enabled,omitempty"`
 }
 
 // --- Error type ---
@@ -406,12 +419,16 @@ func (c *DevinClient) ListKnowledgeNotes() ([]KnowledgeNote, error) {
 			return nil, fmt.Errorf("failed to decode JSON response: %w", err)
 		}
 
-		allNotes = append(allNotes, response.Notes...)
+		allNotes = append(allNotes, response.Items...)
 
-		if !response.HasMore {
+		if !response.HasNextPage {
 			break
 		}
-		after = response.After
+		if response.EndCursor != nil {
+			after = *response.EndCursor
+		} else {
+			break
+		}
 	}
 
 	return allNotes, nil
@@ -505,12 +522,16 @@ func (c *DevinClient) ListFolders() ([]FolderItem, error) {
 			return nil, fmt.Errorf("failed to decode JSON response: %w", err)
 		}
 
-		allFolders = append(allFolders, response.Folders...)
+		allFolders = append(allFolders, response.Items...)
 
-		if !response.HasMore {
+		if !response.HasNextPage {
 			break
 		}
-		after = response.After
+		if response.EndCursor != nil {
+			after = *response.EndCursor
+		} else {
+			break
+		}
 	}
 
 	return allFolders, nil
@@ -656,12 +677,16 @@ func (c *DevinClient) ListSecrets() ([]Secret, error) {
 			return nil, fmt.Errorf("failed to decode JSON response: %w", err)
 		}
 
-		allSecrets = append(allSecrets, response.Secrets...)
+		allSecrets = append(allSecrets, response.Items...)
 
-		if !response.HasMore {
+		if !response.HasNextPage {
 			break
 		}
-		after = response.After
+		if response.EndCursor != nil {
+			after = *response.EndCursor
+		} else {
+			break
+		}
 	}
 
 	return allSecrets, nil

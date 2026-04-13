@@ -15,16 +15,19 @@ provider "devin" {
 # ===================== Schedule Resources =====================
 
 resource "devin_schedule" "daily" {
+  name   = "Daily Quality Check"
   prompt = "Run daily code quality checks"
   cron   = "0 9 * * *"
 }
 
 resource "devin_schedule" "weekly" {
+  name   = "Weekly Dep Review"
   prompt = "Weekly dependency update review"
   cron   = "0 10 * * 1"
 }
 
 resource "devin_schedule" "with_playbook" {
+  name        = "Playbook Schedule"
   prompt      = "Execute playbook on schedule"
   cron        = "30 14 * * 1-5"
   playbook_id = "playbook-mock-1"
