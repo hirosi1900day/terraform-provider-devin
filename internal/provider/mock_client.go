@@ -2,165 +2,496 @@ package provider
 
 import (
 	"fmt"
+	"sync"
 	"time"
 )
 
-// IsMockClient は指定されたAPIキーがモック用かどうかを確認します
+// IsMockClient checks if the API key is for mock/testing
 func IsMockClient(apiKey string) bool {
 	return apiKey == "test_api_key"
 }
 
-// MockClient はテスト用のDevinClientの振る舞いを提供します
-type MockClient struct {
-	// 将来的にはモックのカスタマイズを可能にするフィールドを追加できます
+// stringPtr returns a pointer to a string
+func stringPtr(s string) *string {
+	return &s
 }
 
-// GetMockKnowledge はモックのナレッジリソースを取得します
-func GetMockKnowledge(id string) (*Knowledge, error) {
-	switch id {
-	case "mock-knowledge-1":
-		return &Knowledge{
-			ID:                 "mock-knowledge-1",
-			Name:               "モックナレッジ1",
-			Body:               "これはテスト用のモックナレッジです",
-			TriggerDescription: "テスト用トリガーの説明",
-			ParentFolderID:     "mock-folder-1",
-			CreatedAt:          time.Now().Add(-24 * time.Hour),
-		}, nil
-	case "mock-knowledge-2":
-		return &Knowledge{
-			ID:                 "mock-knowledge-2",
-			Name:               "モックナレッジ2",
-			Body:               "これは別のテスト用のモックナレッジです",
-			TriggerDescription: "別のテスト用トリガーの説明",
-			ParentFolderID:     "mock-folder-2",
-			CreatedAt:          time.Now().Add(-48 * time.Hour),
-		}, nil
-	case "new-mock-knowledge":
-		return &Knowledge{
-			ID:                 "new-mock-knowledge",
-			Name:               "サンプルナレッジ",
-			Body:               "これはTerraformで作成されたサンプルナレッジです",
-			TriggerDescription: "Terraformサンプルトリガー",
-			ParentFolderID:     "mock-folder-1",
-			CreatedAt:          time.Now().Add(-1 * time.Hour),
-		}, nil
-	case "":
-		return &Knowledge{
-			ID:                 "mock-knowledge-1",
-			Name:               "モックナレッジ1",
-			Body:               "これはテスト用のモックナレッジです",
-			TriggerDescription: "テスト用トリガーの説明",
-			ParentFolderID:     "mock-folder-1",
-			CreatedAt:          time.Now().Add(-24 * time.Hour),
-		}, nil
-	default:
-		return nil, fmt.Errorf("ナレッジが見つかりません: ID %s", id)
+// formatTime converts a Unix timestamp to ISO 8601 string
+func formatTime(unixTime float64) string {
+	return time.Unix(int64(unixTime), 0).UTC().Format(time.RFC3339)
+}
+
+// ===================== Stateful Mock Store =====================
+
+// MockStore holds all mock data in memory with thread-safe access.
+// This enables true CRUD lifecycle testing: Create stores data,
+// Read retrieves it, Update modifies it, Delete removes it.
+type MockStore struct {
+	mu           sync.RWMutex
+	knowledge    map[string]*KnowledgeNote
+	playbooks    map[string]*Playbook
+	secrets      map[string]*Secret
+	schedules    map[string]*Schedule
+	knowledgeSeq int
+	playbookSeq  int
+	secretSeq    int
+	scheduleSeq  int
+}
+
+var globalMockStore = &MockStore{
+	knowledge: make(map[string]*KnowledgeNote),
+	playbooks: make(map[string]*Playbook),
+	secrets:   make(map[string]*Secret),
+	schedules: make(map[string]*Schedule),
+}
+
+func init() {
+	seedMockStore()
+}
+
+// seedMockStore populates the mock store with initial data for terraform plan tests
+func seedMockStore() {
+	now := float64(time.Now().Unix())
+	repo := "owner/repo"
+
+	globalMockStore.knowledge["note-mock-1"] = &KnowledgeNote{
+		NoteID: "note-mock-1", Name: "モックナレッジ1",
+		Body: "これはテスト用のモックナレッジです", Trigger: "テスト用トリガーの説明",
+		FolderID: "folder-mock-1", FolderPath: "/モックフォルダ1",
+		IsEnabled: true, AccessType: "org",
+		CreatedAt: now - 86400, UpdatedAt: now - 3600,
+	}
+	globalMockStore.knowledge["note-mock-2"] = &KnowledgeNote{
+		NoteID: "note-mock-2", Name: "モックナレッジ2",
+		Body: "これは別のテスト用のモックナレッジです", Trigger: "別のテスト用トリガーの説明",
+		FolderID: "folder-mock-2", FolderPath: "/モックフォルダ2",
+		IsEnabled: false, PinnedRepo: &repo, AccessType: "org",
+		CreatedAt: now - 172800, UpdatedAt: now - 7200,
+	}
+	globalMockStore.playbooks["playbook-mock-1"] = &Playbook{
+		PlaybookID: "playbook-mock-1", Title: "モックPlaybook",
+		Body:       "テスト用Playbookの内容",
+		AccessType: "org", OrgID: "org-mock",
+		CreatedAt: now - 86400, UpdatedAt: now - 3600,
+		CreatedBy: "user-1", UpdatedBy: "user-1",
+	}
+	globalMockStore.secrets["secret-mock-1"] = &Secret{
+		SecretID: "secret-mock-1", Key: "DATABASE_URL",
+		SecretType: "key-value", IsSensitive: true,
+		CreatedAt: now - 86400, UpdatedAt: now - 3600,
+	}
+	globalMockStore.secrets["secret-mock-2"] = &Secret{
+		SecretID: "secret-mock-2", Key: "API_TOKEN",
+		SecretType: "key-value", IsSensitive: true,
+		CreatedAt: now - 172800, UpdatedAt: now - 7200,
+	}
+	globalMockStore.schedules["schedule-mock-1"] = &Schedule{
+		ScheduledSessionID: "schedule-mock-1", Name: "定期タスク",
+		Prompt:    "定期タスクのプロンプト",
+		Frequency: stringPtr("0 9 * * 1"),
+		Playbook:  &SchedulePlaybookInfo{PlaybookID: "playbook-mock-1", Title: "モックPlaybook"},
+		Enabled:   true,
+		CreatedAt: formatTime(now - 86400), UpdatedAt: formatTime(now - 3600),
 	}
 }
 
-// GetMockKnowledgeList はモックのナレッジリスト一覧を返します
-func GetMockKnowledgeList() *ListKnowledgeResponse {
-	return &ListKnowledgeResponse{
-		Knowledge: []KnowledgeItem{
-			{
-				ID:                 "mock-knowledge-1",
-				Name:               "モックナレッジ1",
-				Body:               "これはテスト用のモックナレッジの内容です。",
-				TriggerDescription: "テスト用トリガーの説明",
-				ParentFolderID:     "mock-folder-1",
-				CreatedAt:          time.Now().Add(-24 * time.Hour),
-			},
-			{
-				ID:                 "mock-knowledge-2",
-				Name:               "モックナレッジ2",
-				Body:               "これは別のテスト用のモックナレッジの内容です。",
-				TriggerDescription: "別のテスト用トリガーの説明",
-				ParentFolderID:     "mock-folder-2",
-				CreatedAt:          time.Now().Add(-48 * time.Hour),
-			},
+// ResetMockStore clears all mock data (call in test setup)
+func ResetMockStore() {
+	globalMockStore.mu.Lock()
+	defer globalMockStore.mu.Unlock()
+	globalMockStore.knowledge = make(map[string]*KnowledgeNote)
+	globalMockStore.playbooks = make(map[string]*Playbook)
+	globalMockStore.secrets = make(map[string]*Secret)
+	globalMockStore.schedules = make(map[string]*Schedule)
+	globalMockStore.knowledgeSeq = 0
+	globalMockStore.playbookSeq = 0
+	globalMockStore.secretSeq = 0
+	globalMockStore.scheduleSeq = 0
+}
+
+// ===================== Knowledge Note Mocks =====================
+
+// GetMockKnowledgeNote returns a mock knowledge note by ID (stateful)
+func GetMockKnowledgeNote(noteID string) (*KnowledgeNote, error) {
+	globalMockStore.mu.RLock()
+	defer globalMockStore.mu.RUnlock()
+
+	if note, ok := globalMockStore.knowledge[noteID]; ok {
+		return note, nil
+	}
+	return nil, fmt.Errorf("ナレッジが見つかりません: ID %s", noteID)
+}
+
+// GetMockKnowledgeNoteList returns all knowledge notes from the store
+func GetMockKnowledgeNoteList() []KnowledgeNote {
+	globalMockStore.mu.RLock()
+	defer globalMockStore.mu.RUnlock()
+
+	notes := make([]KnowledgeNote, 0, len(globalMockStore.knowledge))
+	for _, note := range globalMockStore.knowledge {
+		notes = append(notes, *note)
+	}
+	return notes
+}
+
+// CreateMockKnowledgeNote creates a mock knowledge note (stateful)
+func CreateMockKnowledgeNote(req CreateKnowledgeNoteRequest) *KnowledgeNote {
+	globalMockStore.mu.Lock()
+	defer globalMockStore.mu.Unlock()
+
+	now := float64(time.Now().Unix())
+	globalMockStore.knowledgeSeq++
+	id := fmt.Sprintf("note-mock-%d", globalMockStore.knowledgeSeq)
+
+	note := &KnowledgeNote{
+		NoteID:     id,
+		Name:       req.Name,
+		Body:       req.Body,
+		Trigger:    req.Trigger,
+		FolderID:   "",
+		FolderPath: "",
+		IsEnabled:  true,
+		PinnedRepo: req.PinnedRepo,
+		AccessType: "org",
+		CreatedAt:  now,
+		UpdatedAt:  now,
+	}
+	globalMockStore.knowledge[id] = note
+	return note
+}
+
+// UpdateMockKnowledgeNote updates a mock knowledge note (stateful)
+func UpdateMockKnowledgeNote(noteID string, req UpdateKnowledgeNoteRequest) *KnowledgeNote {
+	globalMockStore.mu.Lock()
+	defer globalMockStore.mu.Unlock()
+
+	now := float64(time.Now().Unix())
+
+	existing, ok := globalMockStore.knowledge[noteID]
+	createdAt := now - 86400
+	if ok {
+		createdAt = existing.CreatedAt
+	}
+
+	note := &KnowledgeNote{
+		NoteID:     noteID,
+		Name:       req.Name,
+		Body:       req.Body,
+		Trigger:    req.Trigger,
+		FolderID:   "",
+		FolderPath: "",
+		IsEnabled:  true,
+		PinnedRepo: req.PinnedRepo,
+		AccessType: "org",
+		CreatedAt:  createdAt,
+		UpdatedAt:  now,
+	}
+	globalMockStore.knowledge[noteID] = note
+	return note
+}
+
+// DeleteMockKnowledgeNote deletes a mock knowledge note from the store
+func DeleteMockKnowledgeNote(noteID string) {
+	globalMockStore.mu.Lock()
+	defer globalMockStore.mu.Unlock()
+	delete(globalMockStore.knowledge, noteID)
+}
+
+// ===================== Folder Mocks =====================
+
+// GetMockFolderList returns a mock list of folders
+func GetMockFolderList() []FolderItem {
+	return []FolderItem{
+		{
+			FolderID:       "folder-mock-1",
+			Name:           "モックフォルダ1",
+			Path:           "/モックフォルダ1",
+			NoteCount:      5,
+			ParentFolderID: "",
 		},
-		Folders: []FolderItem{
-			{
-				ID:          "mock-folder-1",
-				Name:        "モックフォルダ1",
-				Description: "これはテスト用のモックフォルダです",
-				CreatedAt:   time.Now().Add(-72 * time.Hour),
-			},
-			{
-				ID:          "mock-folder-2",
-				Name:        "モックフォルダ2",
-				Description: "これは別のテスト用のモックフォルダです",
-				CreatedAt:   time.Now().Add(-96 * time.Hour),
-			},
+		{
+			FolderID:       "folder-mock-2",
+			Name:           "モックフォルダ2",
+			Path:           "/モックフォルダ2",
+			NoteCount:      3,
+			ParentFolderID: "",
 		},
 	}
 }
 
-// CreateMockKnowledge は新しいモックナレッジを作成します
-func CreateMockKnowledge(name, body string, triggerDescription, parentFolderID string) *Knowledge {
-	return &Knowledge{
-		ID:                 "new-mock-knowledge",
-		Name:               name,
-		Body:               body,
-		TriggerDescription: triggerDescription,
-		ParentFolderID:     parentFolderID,
-		CreatedAt:          time.Now(),
-	}
-}
-
-// UpdateMockKnowledge はモックナレッジを更新します
-func UpdateMockKnowledge(id, name, body string, triggerDescription, parentFolderID string) *Knowledge {
-	return &Knowledge{
-		ID:                 id,
-		Name:               name,
-		Body:               body,
-		TriggerDescription: triggerDescription,
-		ParentFolderID:     parentFolderID,
-		CreatedAt:          time.Now().Add(-24 * time.Hour),
-	}
-}
-
-// GetMockFolderByID はモックフォルダリソースをIDで取得します
+// GetMockFolderByID returns a mock folder by ID
 func GetMockFolderByID(id string) (*FolderItem, error) {
 	switch id {
-	case "mock-folder-1":
+	case "folder-mock-1":
 		return &FolderItem{
-			ID:          "mock-folder-1",
-			Name:        "モックフォルダ1",
-			Description: "これはテスト用のモックフォルダです",
-			CreatedAt:   time.Now().Add(-72 * time.Hour),
+			FolderID:       "folder-mock-1",
+			Name:           "モックフォルダ1",
+			Path:           "/モックフォルダ1",
+			NoteCount:      5,
+			ParentFolderID: "",
 		}, nil
-	case "mock-folder-2":
+	case "folder-mock-2":
 		return &FolderItem{
-			ID:          "mock-folder-2",
-			Name:        "モックフォルダ2",
-			Description: "これは別のテスト用のモックフォルダです",
-			CreatedAt:   time.Now().Add(-96 * time.Hour),
+			FolderID:       "folder-mock-2",
+			Name:           "モックフォルダ2",
+			Path:           "/モックフォルダ2",
+			NoteCount:      3,
+			ParentFolderID: "",
 		}, nil
 	default:
 		return nil, fmt.Errorf("フォルダが見つかりません: ID %s", id)
 	}
 }
 
-// GetMockFolderByName はモックフォルダリソースを名前で取得します
+// GetMockFolderByName returns a mock folder by name
 func GetMockFolderByName(name string) (*FolderItem, error) {
 	switch name {
 	case "モックフォルダ1":
 		return &FolderItem{
-			ID:          "mock-folder-1",
-			Name:        "モックフォルダ1",
-			Description: "これはテスト用のモックフォルダです",
-			CreatedAt:   time.Now().Add(-72 * time.Hour),
+			FolderID:       "folder-mock-1",
+			Name:           "モックフォルダ1",
+			Path:           "/モックフォルダ1",
+			NoteCount:      5,
+			ParentFolderID: "",
 		}, nil
 	case "モックフォルダ2":
 		return &FolderItem{
-			ID:          "mock-folder-2",
-			Name:        "モックフォルダ2",
-			Description: "これは別のテスト用のモックフォルダです",
-			CreatedAt:   time.Now().Add(-96 * time.Hour),
+			FolderID:       "folder-mock-2",
+			Name:           "モックフォルダ2",
+			Path:           "/モックフォルダ2",
+			NoteCount:      3,
+			ParentFolderID: "",
 		}, nil
 	default:
 		return nil, fmt.Errorf("フォルダが見つかりません: 名前 %s", name)
 	}
+}
+
+// ===================== Playbook Mocks =====================
+
+// GetMockPlaybook returns a mock playbook by ID (stateful)
+func GetMockPlaybook(playbookID string) (*Playbook, error) {
+	globalMockStore.mu.RLock()
+	defer globalMockStore.mu.RUnlock()
+
+	if pb, ok := globalMockStore.playbooks[playbookID]; ok {
+		return pb, nil
+	}
+	return nil, fmt.Errorf("Playbookが見つかりません: ID %s", playbookID)
+}
+
+// CreateMockPlaybook creates a mock playbook (stateful)
+func CreateMockPlaybook(req CreatePlaybookRequest) *Playbook {
+	globalMockStore.mu.Lock()
+	defer globalMockStore.mu.Unlock()
+
+	now := float64(time.Now().Unix())
+	globalMockStore.playbookSeq++
+	id := fmt.Sprintf("playbook-mock-%d", globalMockStore.playbookSeq)
+
+	pb := &Playbook{
+		PlaybookID: id,
+		Title:      req.Title,
+		Body:       req.Body,
+		AccessType: "org",
+		Macro:      nil,
+		OrgID:      "org-mock",
+		CreatedAt:  now,
+		UpdatedAt:  now,
+		CreatedBy:  "user-1",
+		UpdatedBy:  "user-1",
+	}
+	globalMockStore.playbooks[id] = pb
+	return pb
+}
+
+// UpdateMockPlaybook updates a mock playbook (stateful)
+func UpdateMockPlaybook(playbookID string, req UpdatePlaybookRequest) *Playbook {
+	globalMockStore.mu.Lock()
+	defer globalMockStore.mu.Unlock()
+
+	now := float64(time.Now().Unix())
+
+	existing, ok := globalMockStore.playbooks[playbookID]
+	createdAt := now - 86400
+	if ok {
+		createdAt = existing.CreatedAt
+	}
+
+	pb := &Playbook{
+		PlaybookID: playbookID,
+		Title:      req.Title,
+		Body:       req.Body,
+		AccessType: "org",
+		Macro:      nil,
+		OrgID:      "org-mock",
+		CreatedAt:  createdAt,
+		UpdatedAt:  now,
+		CreatedBy:  "user-1",
+		UpdatedBy:  "user-1",
+	}
+	globalMockStore.playbooks[playbookID] = pb
+	return pb
+}
+
+// DeleteMockPlaybook deletes a mock playbook from the store
+func DeleteMockPlaybook(playbookID string) {
+	globalMockStore.mu.Lock()
+	defer globalMockStore.mu.Unlock()
+	delete(globalMockStore.playbooks, playbookID)
+}
+
+// ===================== Secret Mocks =====================
+
+// GetMockSecretList returns all secrets from the store
+func GetMockSecretList() []Secret {
+	globalMockStore.mu.RLock()
+	defer globalMockStore.mu.RUnlock()
+
+	secrets := make([]Secret, 0, len(globalMockStore.secrets))
+	for _, s := range globalMockStore.secrets {
+		secrets = append(secrets, *s)
+	}
+	return secrets
+}
+
+// GetMockSecretByID returns a mock secret by ID (stateful)
+func GetMockSecretByID(secretID string) (*Secret, error) {
+	globalMockStore.mu.RLock()
+	defer globalMockStore.mu.RUnlock()
+
+	if s, ok := globalMockStore.secrets[secretID]; ok {
+		return s, nil
+	}
+	return nil, fmt.Errorf("Secretが見つかりません: ID %s", secretID)
+}
+
+// CreateMockSecret creates a mock secret (stateful)
+func CreateMockSecret(req CreateSecretRequest) *Secret {
+	globalMockStore.mu.Lock()
+	defer globalMockStore.mu.Unlock()
+
+	now := float64(time.Now().Unix())
+	globalMockStore.secretSeq++
+	id := fmt.Sprintf("secret-mock-%d", globalMockStore.secretSeq)
+
+	s := &Secret{
+		SecretID:    id,
+		Key:         req.Key,
+		SecretType:  req.Type,
+		IsSensitive: req.IsSensitive,
+		CreatedAt:   now,
+		UpdatedAt:   now,
+	}
+	globalMockStore.secrets[id] = s
+	return s
+}
+
+// DeleteMockSecret deletes a mock secret from the store
+func DeleteMockSecret(secretID string) {
+	globalMockStore.mu.Lock()
+	defer globalMockStore.mu.Unlock()
+	delete(globalMockStore.secrets, secretID)
+}
+
+// ===================== Schedule Mocks =====================
+
+// GetMockSchedule returns a mock schedule by ID (stateful)
+func GetMockSchedule(scheduleID string) (*Schedule, error) {
+	globalMockStore.mu.RLock()
+	defer globalMockStore.mu.RUnlock()
+
+	if s, ok := globalMockStore.schedules[scheduleID]; ok {
+		return s, nil
+	}
+	return nil, fmt.Errorf("Scheduleが見つかりません: ID %s", scheduleID)
+}
+
+// CreateMockSchedule creates a mock schedule (stateful)
+func CreateMockSchedule(req CreateScheduleRequest) *Schedule {
+	globalMockStore.mu.Lock()
+	defer globalMockStore.mu.Unlock()
+
+	now := time.Now()
+	globalMockStore.scheduleSeq++
+	id := fmt.Sprintf("sched-mock-%d", globalMockStore.scheduleSeq)
+
+	var playbook *SchedulePlaybookInfo
+	if req.PlaybookID != "" {
+		playbook = &SchedulePlaybookInfo{PlaybookID: req.PlaybookID}
+	}
+
+	s := &Schedule{
+		ScheduledSessionID: id,
+		Name:               req.Name,
+		Prompt:             req.Prompt,
+		Frequency:          stringPtr(req.Frequency),
+		Playbook:           playbook,
+		Enabled:            true,
+		CreatedAt:          now.Format(time.RFC3339),
+		UpdatedAt:          now.Format(time.RFC3339),
+	}
+	globalMockStore.schedules[id] = s
+	return s
+}
+
+// UpdateMockSchedule updates a mock schedule (stateful)
+func UpdateMockSchedule(scheduleID string, req UpdateScheduleRequest) *Schedule {
+	globalMockStore.mu.Lock()
+	defer globalMockStore.mu.Unlock()
+
+	now := time.Now()
+
+	existing, ok := globalMockStore.schedules[scheduleID]
+	if !ok {
+		existing = &Schedule{
+			ScheduledSessionID: scheduleID,
+			Name:               "既存のスケジュール",
+			Prompt:             "既存のプロンプト",
+			Frequency:          stringPtr("0 9 * * 1"),
+			Enabled:            true,
+			CreatedAt:          now.Add(-24 * time.Hour).Format(time.RFC3339),
+		}
+	}
+
+	schedule := &Schedule{
+		ScheduledSessionID: scheduleID,
+		Name:               existing.Name,
+		Prompt:             existing.Prompt,
+		Frequency:          existing.Frequency,
+		Playbook:           existing.Playbook,
+		Enabled:            existing.Enabled,
+		CreatedAt:          existing.CreatedAt,
+		UpdatedAt:          now.Format(time.RFC3339),
+	}
+
+	if req.Name != nil {
+		schedule.Name = *req.Name
+	}
+	if req.Prompt != nil {
+		schedule.Prompt = *req.Prompt
+	}
+	if req.Frequency != nil {
+		schedule.Frequency = req.Frequency
+	}
+	if req.PlaybookID != nil {
+		if *req.PlaybookID == "" {
+			schedule.Playbook = nil
+		} else {
+			schedule.Playbook = &SchedulePlaybookInfo{PlaybookID: *req.PlaybookID}
+		}
+	}
+	if req.Enabled != nil {
+		schedule.Enabled = *req.Enabled
+	}
+
+	globalMockStore.schedules[scheduleID] = schedule
+	return schedule
+}
+
+// DeleteMockSchedule deletes a mock schedule from the store
+func DeleteMockSchedule(scheduleID string) {
+	globalMockStore.mu.Lock()
+	defer globalMockStore.mu.Unlock()
+	delete(globalMockStore.schedules, scheduleID)
 }

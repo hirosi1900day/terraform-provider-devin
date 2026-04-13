@@ -17,9 +17,11 @@ type FolderDataSource struct {
 
 // FolderDataSourceModel represents the schema structure for the Terraform data source
 type FolderDataSourceModel struct {
-	ID          types.String `tfsdk:"id"`
-	Name        types.String `tfsdk:"name"`
-	Description types.String `tfsdk:"description"`
+	ID             types.String `tfsdk:"id"`
+	Name           types.String `tfsdk:"name"`
+	Path           types.String `tfsdk:"path"`
+	NoteCount      types.Int64  `tfsdk:"note_count"`
+	ParentFolderID types.String `tfsdk:"parent_folder_id"`
 }
 
 // NewFolderDataSource creates an instance of the folder data source
@@ -35,10 +37,10 @@ func (d *FolderDataSource) Metadata(_ context.Context, req datasource.MetadataRe
 // Schema defines the data source schema
 func (d *FolderDataSource) Schema(_ context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		Description: "Retrieves folder information from the Devin API",
+		Description: "Retrieves folder information from the Devin API v3",
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
-				Description: "The ID of the folder resource",
+				Description: "The folder_id of the folder resource",
 				Optional:    true,
 				Computed:    true,
 			},
@@ -47,8 +49,16 @@ func (d *FolderDataSource) Schema(_ context.Context, _ datasource.SchemaRequest,
 				Optional:    true,
 				Computed:    true,
 			},
-			"description": schema.StringAttribute{
-				Description: "The description of the folder resource",
+			"path": schema.StringAttribute{
+				Description: "The hierarchical path of the folder",
+				Computed:    true,
+			},
+			"note_count": schema.Int64Attribute{
+				Description: "The number of notes in the folder",
+				Computed:    true,
+			},
+			"parent_folder_id": schema.StringAttribute{
+				Description: "The ID of the parent folder",
 				Computed:    true,
 			},
 		},
@@ -65,7 +75,7 @@ func (d *FolderDataSource) Configure(_ context.Context, req datasource.Configure
 	if !ok {
 		resp.Diagnostics.AddError(
 			"Unexpected data source configure type",
-			fmt.Sprintf("Expected *DevinClient, got: %T. Please report this issue to the provider developers.", req.ProviderData),
+			fmt.Sprintf("Expected *DevinClient, got: %T.", req.ProviderData),
 		)
 		return
 	}
@@ -85,22 +95,17 @@ func (d *FolderDataSource) Read(ctx context.Context, req datasource.ReadRequest,
 	var folder *FolderItem
 	var err error
 
-	// Check if we're searching by ID or name
 	if !config.ID.IsNull() {
 		folderID := config.ID.ValueString()
 		tflog.Info(ctx, "Starting folder data retrieval by ID", map[string]interface{}{
 			"id": folderID,
 		})
-
-		// Get folder by ID
 		folder, err = d.client.GetFolderByID(folderID)
 	} else if !config.Name.IsNull() {
 		folderName := config.Name.ValueString()
 		tflog.Info(ctx, "Starting folder data retrieval by name", map[string]interface{}{
 			"name": folderName,
 		})
-
-		// Get folder by name
 		folder, err = d.client.GetFolderByName(folderName)
 	} else {
 		resp.Diagnostics.AddError(
@@ -118,22 +123,24 @@ func (d *FolderDataSource) Read(ctx context.Context, req datasource.ReadRequest,
 		return
 	}
 
-	// Map the API response to the Terraform model
 	state := FolderDataSourceModel{
-		ID:          types.StringValue(folder.ID),
-		Name:        types.StringValue(folder.Name),
-		Description: types.StringValue(folder.Description),
+		ID:        types.StringValue(folder.FolderID),
+		Name:      types.StringValue(folder.Name),
+		Path:      types.StringValue(folder.Path),
+		NoteCount: types.Int64Value(int64(folder.NoteCount)),
 	}
 
-	// Set state
+	if folder.ParentFolderID != "" {
+		state.ParentFolderID = types.StringValue(folder.ParentFolderID)
+	} else {
+		state.ParentFolderID = types.StringValue("")
+	}
+
 	diags = resp.State.Set(ctx, &state)
 	resp.Diagnostics.Append(diags...)
-	if resp.Diagnostics.HasError() {
-		return
-	}
 
 	tflog.Info(ctx, "Successfully retrieved folder data", map[string]interface{}{
-		"id":   folder.ID,
+		"id":   folder.FolderID,
 		"name": folder.Name,
 	})
 }

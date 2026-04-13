@@ -1,12 +1,12 @@
 # Example usage of devin_folder data source
 # By ID
 data "devin_folder" "example_by_id" {
-  id = "mock-folder-1"
+  id = "folder-xxxx"  # folder_id
 }
 
 # By Name
 data "devin_folder" "example_by_name" {
-  name = "モックフォルダ1"
+  name = "My Folder"
 }
 
 # Output example

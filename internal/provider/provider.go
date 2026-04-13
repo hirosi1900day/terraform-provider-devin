@@ -22,6 +22,7 @@ type DevinProvider struct {
 // DevinProviderModel represents the provider configuration structure
 type DevinProviderModel struct {
 	APIKey types.String `tfsdk:"api_key"`
+	OrgID  types.String `tfsdk:"org_id"`
 }
 
 // New returns a new instance of the Devin provider
@@ -44,9 +45,13 @@ func (p *DevinProvider) Schema(_ context.Context, _ provider.SchemaRequest, resp
 	resp.Schema = schema.Schema{
 		Attributes: map[string]schema.Attribute{
 			"api_key": schema.StringAttribute{
-				Description: "API Key for Devin API. Can also be set via the DEVIN_API_KEY environment variable.",
+				Description: "API Key for Devin API (cog_* Service User credential). Can also be set via the DEVIN_API_KEY environment variable.",
 				Optional:    true,
 				Sensitive:   true,
+			},
+			"org_id": schema.StringAttribute{
+				Description: "Organization ID for Devin API (org_*). Can also be set via the DEVIN_ORG_ID environment variable.",
+				Optional:    true,
 			},
 		},
 	}
@@ -78,8 +83,23 @@ func (p *DevinProvider) Configure(ctx context.Context, req provider.ConfigureReq
 		return
 	}
 
+	// Setting Organization ID
+	orgID := os.Getenv("DEVIN_ORG_ID")
+	if !config.OrgID.IsNull() {
+		orgID = config.OrgID.ValueString()
+	}
+
+	if orgID == "" {
+		resp.Diagnostics.AddAttributeError(
+			path.Root("org_id"),
+			"Organization ID not set",
+			"Please set the Organization ID for Devin API. It can be set in Terraform configuration or via the DEVIN_ORG_ID environment variable.",
+		)
+		return
+	}
+
 	// Create client
-	client := NewClient(apiKey)
+	client := NewClient(apiKey, orgID)
 
 	resp.ResourceData = client
 	resp.DataSourceData = client
@@ -91,6 +111,9 @@ func (p *DevinProvider) Configure(ctx context.Context, req provider.ConfigureReq
 func (p *DevinProvider) Resources(_ context.Context) []func() resource.Resource {
 	return []func() resource.Resource{
 		NewKnowledgeResource,
+		NewPlaybookResource,
+		NewSecretResource,
+		NewScheduleResource,
 	}
 }
 

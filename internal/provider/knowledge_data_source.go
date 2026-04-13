@@ -17,11 +17,18 @@ type KnowledgeDataSource struct {
 
 // KnowledgeDataSourceModel represents the schema structure for the Terraform data source
 type KnowledgeDataSourceModel struct {
-	ID                 types.String `tfsdk:"id"`
-	Name               types.String `tfsdk:"name"`
-	Body               types.String `tfsdk:"body"`
-	TriggerDescription types.String `tfsdk:"trigger_description"`
-	ParentFolderID     types.String `tfsdk:"parent_folder_id"`
+	ID         types.String  `tfsdk:"id"`
+	Name       types.String  `tfsdk:"name"`
+	Body       types.String  `tfsdk:"body"`
+	Trigger    types.String  `tfsdk:"trigger"`
+	FolderID   types.String  `tfsdk:"folder_id"`
+	FolderPath types.String  `tfsdk:"folder_path"`
+	PinnedRepo types.String  `tfsdk:"pinned_repo"`
+	IsEnabled  types.Bool    `tfsdk:"is_enabled"`
+	Macro      types.String  `tfsdk:"macro"`
+	AccessType types.String  `tfsdk:"access_type"`
+	CreatedAt  types.Float64 `tfsdk:"created_at"`
+	UpdatedAt  types.Float64 `tfsdk:"updated_at"`
 }
 
 // NewKnowledgeDataSource creates an instance of the knowledge data source
@@ -37,10 +44,10 @@ func (d *KnowledgeDataSource) Metadata(_ context.Context, req datasource.Metadat
 // Schema defines the data source schema
 func (d *KnowledgeDataSource) Schema(_ context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		Description: "Retrieves knowledge information from the Devin API",
+		Description: "Retrieves knowledge note information from the Devin API v3",
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
-				Description: "The ID of the knowledge resource",
+				Description: "The note_id of the knowledge resource",
 				Required:    true,
 			},
 			"name": schema.StringAttribute{
@@ -51,12 +58,40 @@ func (d *KnowledgeDataSource) Schema(_ context.Context, _ datasource.SchemaReque
 				Description: "The content of the knowledge resource",
 				Computed:    true,
 			},
-			"trigger_description": schema.StringAttribute{
+			"trigger": schema.StringAttribute{
 				Description: "The trigger description for the knowledge resource",
 				Computed:    true,
 			},
-			"parent_folder_id": schema.StringAttribute{
+			"folder_id": schema.StringAttribute{
 				Description: "The ID of the parent folder",
+				Computed:    true,
+			},
+			"folder_path": schema.StringAttribute{
+				Description: "The folder path",
+				Computed:    true,
+			},
+			"pinned_repo": schema.StringAttribute{
+				Description: "Pinned repository",
+				Computed:    true,
+			},
+			"is_enabled": schema.BoolAttribute{
+				Description: "Whether the knowledge is enabled",
+				Computed:    true,
+			},
+			"macro": schema.StringAttribute{
+				Description: "The macro identifier",
+				Computed:    true,
+			},
+			"access_type": schema.StringAttribute{
+				Description: "Access type: enterprise or org",
+				Computed:    true,
+			},
+			"created_at": schema.Float64Attribute{
+				Description: "Creation timestamp (UNIX)",
+				Computed:    true,
+			},
+			"updated_at": schema.Float64Attribute{
+				Description: "Last update timestamp (UNIX)",
 				Computed:    true,
 			},
 		},
@@ -73,7 +108,7 @@ func (d *KnowledgeDataSource) Configure(_ context.Context, req datasource.Config
 	if !ok {
 		resp.Diagnostics.AddError(
 			"Unexpected data source configure type",
-			fmt.Sprintf("Expected *DevinClient, got: %T. Please report this issue to the provider developers.", req.ProviderData),
+			fmt.Sprintf("Expected *DevinClient, got: %T.", req.ProviderData),
 		)
 		return
 	}
@@ -90,13 +125,12 @@ func (d *KnowledgeDataSource) Read(ctx context.Context, req datasource.ReadReque
 		return
 	}
 
-	knowledgeID := config.ID.ValueString()
+	noteID := config.ID.ValueString()
 	tflog.Info(ctx, "Starting knowledge data retrieval", map[string]interface{}{
-		"id": knowledgeID,
+		"id": noteID,
 	})
 
-	// Get knowledge
-	knowledge, err := d.client.GetKnowledge(knowledgeID)
+	note, err := d.client.GetKnowledgeNote(noteID)
 	if err != nil {
 		resp.Diagnostics.AddError(
 			"Failed to retrieve knowledge",
@@ -105,17 +139,31 @@ func (d *KnowledgeDataSource) Read(ctx context.Context, req datasource.ReadReque
 		return
 	}
 
-	// Set data
-	config.Name = types.StringValue(knowledge.Name)
-	config.Body = types.StringValue(knowledge.Body)
-	config.TriggerDescription = types.StringValue(knowledge.TriggerDescription)
-	config.ParentFolderID = types.StringValue(knowledge.ParentFolderID)
+	// Map response to model
+	config.Name = types.StringValue(note.Name)
+	config.Body = types.StringValue(note.Body)
+	config.Trigger = types.StringValue(note.Trigger)
+	config.IsEnabled = types.BoolValue(note.IsEnabled)
+	config.FolderPath = types.StringValue(note.FolderPath)
+	config.Macro = types.StringValue(note.Macro)
+	config.AccessType = types.StringValue(note.AccessType)
+	config.CreatedAt = types.Float64Value(note.CreatedAt)
+	config.UpdatedAt = types.Float64Value(note.UpdatedAt)
+
+	if note.FolderID != "" {
+		config.FolderID = types.StringValue(note.FolderID)
+	} else {
+		config.FolderID = types.StringValue("")
+	}
+
+	if note.PinnedRepo != nil {
+		config.PinnedRepo = types.StringValue(*note.PinnedRepo)
+	} else {
+		config.PinnedRepo = types.StringValue("")
+	}
 
 	diags = resp.State.Set(ctx, config)
 	resp.Diagnostics.Append(diags...)
-	if resp.Diagnostics.HasError() {
-		return
-	}
 
 	tflog.Info(ctx, "Knowledge data retrieval completed")
 }

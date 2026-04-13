@@ -5,30 +5,51 @@ import (
 )
 
 func TestClientError(t *testing.T) {
-	// Test with invalid API key
-	client := NewClient("invalid_key")
+	client := NewClient("invalid_key", "org-test")
 
-	// In the current implementation, we need to skip this test when using mock data
-	// because errors are only triggered with actual API requests
 	if client.APIKey == "test_api_key" {
 		t.Skip("This test requires connection to the actual API")
 	}
 }
 
 func TestKnowledgeResourceImports(t *testing.T) {
-	// Test for resource import functionality
 	resource := NewKnowledgeResource()
 	if resource == nil {
 		t.Fatal("NewKnowledgeResource() returned nil")
 	}
-
-	// Further detailed tests would require RPC, so we only verify resource creation
 }
 
 func TestKnowledgeDataSourceImports(t *testing.T) {
-	// Test for data source import functionality
 	dataSource := NewKnowledgeDataSource()
 	if dataSource == nil {
 		t.Fatal("NewKnowledgeDataSource() returned nil")
+	}
+}
+
+func TestPlaybookResourceImports(t *testing.T) {
+	resource := NewPlaybookResource()
+	if resource == nil {
+		t.Fatal("NewPlaybookResource() returned nil")
+	}
+}
+
+func TestSecretResourceImports(t *testing.T) {
+	resource := NewSecretResource()
+	if resource == nil {
+		t.Fatal("NewSecretResource() returned nil")
+	}
+}
+
+func TestScheduleResourceImports(t *testing.T) {
+	resource := NewScheduleResource()
+	if resource == nil {
+		t.Fatal("NewScheduleResource() returned nil")
+	}
+}
+
+func TestFolderDataSourceImports(t *testing.T) {
+	dataSource := NewFolderDataSource()
+	if dataSource == nil {
+		t.Fatal("NewFolderDataSource() returned nil")
 	}
 }
